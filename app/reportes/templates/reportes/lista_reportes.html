@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Reportes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Reportes Fotográficos</h2>
+    <a href="{% url 'crear_reporte' %}" class="btn btn-success">Crear nuevo reporte</a>
+</div>
+<table class="table table-striped table-bordered align-middle">
+    <thead class="table-primary">
+        <tr>
+            <th>Proyecto</th>
+            <th>Fecha de emisión</th>
+            <th>Descripción</th>
+            <th>Fotos</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for reporte in reportes %}
+        <tr>
+            <td><strong>{{ reporte.proyecto }}</strong></td>
+            <td>{{ reporte.fecha_emision|date:'Y-m-d' }}</td>
+            <td>{{ reporte.descripcion|truncatechars:50 }}</td>
+            <td>
+                <div class="d-flex flex-wrap">
+                    {% for foto in reporte.fotos.all|slice:":4" %}
+                        <div class="me-1 mb-1">
+                            <img src="{{ foto.imagen.url }}" width="60" class="img-thumbnail" alt="Foto {{ forloop.counter }}">
+                        </div>
+                    {% empty %}
+                        <span class="text-muted">Sin fotos</span>
+                    {% endfor %}
+                </div>
+            </td>
+            <td>
+                <a href="{% url 'reporte_pdf' reporte.id %}" target="_blank" class="btn btn-sm btn-outline-primary">Ver PDF</a>
+                <a href="{% url 'borrar_reporte' reporte.id %}" onclick="return confirm('¿Seguro que deseas borrar este reporte?');" class="btn btn-sm btn-outline-danger ms-1">Borrar</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5" class="text-center">No hay reportes aún.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

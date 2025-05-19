@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|urlencode }}&background=0D8ABC&color=fff&size=150" 
+                         alt="Avatar" class="rounded-circle mb-3" width="150">
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">{{ user.get_rol_display }}</p>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'perfil_usuario' %}" 
+                           class="list-group-item list-group-item-action {% if active_tab == 'perfil' %}active{% endif %}">
+                            <i class="fas fa-user me-2"></i>Perfil
+                        </a>
+                        <a href="{% url 'cambiar_contrasena' %}" 
+                           class="list-group-item list-group-item-action {% if active_tab == 'contrasena' %}active{% endif %}">
+                            <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Editar Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_first_name" class="form-label">Nombres</label>
+                                <input type="text" class="form-control" id="id_first_name" name="first_name" 
+                                       value="{{ form.first_name.value|default:'' }}">
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_last_name" class="form-label">Apellidos</label>
+                                <input type="text" class="form-control" id="id_last_name" name="last_name" 
+                                       value="{{ form.last_name.value|default:'' }}">
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="id_email" name="email" 
+                                   value="{{ form.email.value|default:'' }}">
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="id_telefono" name="telefono" 
+                                   value="{{ form.telefono.value|default:'' }}">
+                            {% if form.telefono.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.telefono.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_direccion" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="id_direccion" name="direccion" rows="3">{{ form.direccion.value|default:'' }}</textarea>
+                            {% if form.direccion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.direccion.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% if form.rol %}
+                        <div class="mb-3">
+                            <label for="id_rol" class="form-label">Rol</label>
+                            {{ form.rol }}
+                            {% if form.rol.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.rol.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

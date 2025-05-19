@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Sistema de Reportes Fotográficos{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 mb-4">Bienvenido al Sistema de Reportes Fotográficos</h1>
+            
+            {% if user.is_authenticated %}
+                <p class="lead mb-4">
+                    Hola, {{ user.username }}. ¿Qué te gustaría hacer hoy?
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                    <a href="{% url 'lista_reportes' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                        Ver Reportes
+                    </a>
+                    <a href="{% url 'crear_reporte' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        Crear Nuevo Reporte
+                    </a>
+                </div>
+            {% else %}
+                <p class="lead mb-4">
+                    Gestiona y crea reportes fotográficos de manera sencilla y eficiente.
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4 me-sm-3">
+                        Iniciar Sesión
+                    </a>
+                    <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        Acceso Administrativo
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not user.is_authenticated %}
+    <div class="row mt-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-4">Características del Sistema</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-camera" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="h5">Reportes Fotográficos</h3>
+                                <p class="text-muted mb-0">Crea y gestiona reportes fotográficos de manera sencilla.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-file-earmark-pdf" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="h5">Generación de PDF</h3>
+                                <p class="text-muted mb-0">Descarga los reportes en formato PDF con un solo clic.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="h5">Acceso Seguro</h3>
+                                <p class="text-muted mb-0">Sistema de autenticación seguro para proteger tu información.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .display-4 {
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .lead {
+        color: #7f8c8d;
+        font-size: 1.25rem;
+    }
+    .btn-primary {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
+    .btn-primary:hover {
+        background-color: #1565c0;
+        border-color: #1565c0;
+    }
+    .card {
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

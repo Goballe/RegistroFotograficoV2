@@ -1,0 +1,24 @@
+# Python
+*.pyc
+__pycache__/
+
+# Django
+*.log
+db.sqlite3
+media/
+static/img/
+
+# Virtual environment
+venv/
+ENV/
+.env
+
+# VSCode
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
+
+# WeasyPrint cache
+.weasyprint/

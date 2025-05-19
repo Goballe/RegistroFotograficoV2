@@ -1,0 +1,232 @@
+{% load extras %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Reporte Diario Fotográfico</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1cm;
+        }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            font-size: 10pt;
+        }
+        .header-table { 
+            width: 100%; 
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .header-table td, .header-table th { 
+            border: 1px solid #333; 
+            padding: 5px; 
+            font-size: 10pt; 
+        }
+        .header-logo { 
+            width: 120px; 
+            text-align: center; 
+        }
+        .header-title { 
+            text-align: center; 
+            font-size: 14pt; 
+            font-weight: bold; 
+        }
+        .header-right { 
+            text-align: right; 
+            font-size: 10pt; 
+            font-weight: bold; 
+        }
+        .info-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 10px;
+            font-size: 8pt;
+        }
+        .info-table td, .info-table th { 
+            border: 1px solid #333; 
+            padding: 4px; 
+            font-size: 8pt; 
+        }
+        .info-table th { 
+            background: #f3f3f3; 
+            font-weight: bold; 
+        }
+        .fotos-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px;
+        }
+        .fotos-table { 
+            table-layout: fixed;
+        }
+        .fotos-table th { 
+            border: 1px solid #333 !important; 
+            text-align: center !important; 
+            vertical-align: middle !important; 
+            font-size: 8px !important; 
+            background: #f3f3f3 !important;
+            font-weight: bold !important;
+            padding: 0 !important; 
+            margin: 0 !important; 
+            line-height: 1 !important; 
+            height: 15px !important; 
+        }
+        .fotos-table td { 
+            border: 1px solid #333 !important; 
+            text-align: center !important; 
+            vertical-align: middle !important; 
+            font-size: 8pt !important;
+            width: 50% !important;
+            height: 180px !important; 
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .foto-container {
+            height: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            position: relative !important;
+        }
+        .foto-pdf {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            object-fit: contain !important;
+            object-position: center !important;
+            position: relative !important;
+        }
+        .foto-label { 
+            background: #f3f3f3 !important; 
+            font-weight: bold !important; 
+            font-size: 8px !important; 
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            height: 15px !important;
+            display: block !important;
+            overflow: hidden !important;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado -->
+    <table class="header-table">
+        <tr>
+            <td class="header-logo" rowspan="2">
+                <!-- Logo -->
+                {% if logo_url %}
+                <img src="{{ logo_url }}" alt="Logo" style="width:100px; height:auto;">
+                {% endif %}
+            </td>
+            <td class="header-title" colspan="4">REPORTE DIARIO FOTOGRÁFICO</td>
+            <td class="header-right">F-30-82</td>
+        </tr>
+        <tr>
+            <td colspan="4"></td>
+            <td class="header-right"></td>
+        </tr>
+    </table>
+    
+    <!-- Datos principales -->
+    <table class="info-table">
+        <tr>
+            <th>Proyecto:</th>
+            <td>{{ reporte.proyecto }}</td>
+            <th>Código del proyecto:</th>
+            <td>{{ reporte.codigo_proyecto }}</td>
+            <th>Versión del reporte:</th>
+            <td>{{ reporte.version_reporte }}</td>
+            <th>REPORTE N°</th>
+            <td>{{ reporte.reporte_numero }}</td>
+        </tr>
+        <tr>
+            <th>Cliente:</th>
+            <td>{{ reporte.cliente }}</td>
+            <th>Contratista:</th>
+            <td>{{ reporte.contratista }}</td>
+            <th>Fecha de emisión:</th>
+            <td>{{ reporte.fecha_emision|date:'j \d\e F \d\e Y' }}</td>
+            <th>Mes Actual de Obra:</th>
+            <td>{{ reporte.mes_actual_obra }}</td>
+        </tr>
+        <tr>
+            <th>Inicio de la Supervisión:</th>
+            <td>{{ reporte.inicio_supervision|date:'j \d\e F \d\e Y' }}</td>
+            <th>Elaborado por:</th>
+            <td>{{ reporte.elaborado_por }}</td>
+            <th>Revisado por:</th>
+            <td>{{ reporte.revisado_por }}</td>
+            <th>Descripción:</th>
+            <td colspan="1">{{ reporte.descripcion }}</td>
+        </tr>
+    </table>
+    
+    <!-- Tabla de fotos 2x2 -->
+    <table class="fotos-table">
+        {% for foto_group in fotos|batch:2 %}
+            <tr>
+                {% for foto in foto_group %}
+                    <th class="foto-label">Fotografía {{ forloop.parentloop.counter0|multiply:2|add:forloop.counter }}</th>
+                {% endfor %}
+                <!-- Asegurarse de que siempre hay 2 columnas -->
+                {% if foto_group|length < 2 %}
+                    <th class="foto-label"></th>
+                {% endif %}
+            </tr>
+            <tr>
+                {% for foto in foto_group %}
+                    <td>
+                        <div class="foto-container">
+                            <!-- Comentado para ocultar la ruta de depuración en el PDF -->
+                            <!--
+                            {% if debug %}
+                                <div style="font-size: 8px; color: #999; word-break: break-all; display: none;">
+                                    {{ foto.relative_url }}
+                                    {% if 'base64' in foto.path|default:'' %}[Base64]{% endif %}
+                                </div>
+                            {% endif %}
+                            -->
+                            {% if 'base64' in foto.path|default:'' %}
+                                <!-- Usar datos en base64 directamente -->
+                                <img src="{{ foto.path }}" class="foto-pdf" 
+                                     alt="Foto {{ forloop.parentloop.counter0|multiply:2|add:forloop.counter }}"
+                                     style="max-width: 100%; max-height: 300px; display: block; margin: 0 auto;">
+                            {% else %}
+                                <!-- Usar ruta de archivo o URL -->
+                                <img src="{{ foto.path }}" class="foto-pdf" 
+                                     alt="Foto {{ forloop.parentloop.counter0|multiply:2|add:forloop.counter }}"
+                                     onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-family%3D%22Arial%22%20font-size%3D%2210%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EImagen%20no%20disponible%3C%2Ftext%3E%3C%2Fsvg%3E';"
+                                     style="max-width: 100%; max-height: 300px; display: block; margin: 0 auto;">
+                            {% endif %}
+                            {% if foto.imagen.descripcion %}
+                                <div class="foto-descripcion">{{ foto.imagen.descripcion }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                {% endfor %}
+                <!-- Celda vacía si hay un número impar de fotos -->
+                {% if foto_group|length < 2 %}
+                    <td></td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
