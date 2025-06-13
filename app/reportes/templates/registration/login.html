@@ -5,18 +5,138 @@
 
 {% block extra_head %}
 <style>
+    /* Estilos para los botones 3D */
+    .btn-3d-container {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+    
+    .button-3d-pushable {
+        position: relative;
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        outline-offset: 4px;
+        transition: filter 250ms;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+    }
+
+    .button-3d-shadow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: hsl(0deg 0% 0% / 0.25);
+        will-change: transform;
+        transform: translateY(2px);
+        transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+    }
+
+    .button-3d-edge {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        background: linear-gradient(
+            to left,
+            hsl(340deg 100% 16%) 0%,
+            hsl(340deg 100% 32%) 8%,
+            hsl(340deg 100% 32%) 92%,
+            hsl(340deg 100% 16%) 100%
+        );
+    }
+
+    .button-3d-front {
+        display: block;
+        position: relative;
+        padding: 12px 27px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        color: white;
+        background: #92263f;
+        will-change: transform;
+        transform: translateY(-4px);
+        transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+    }
+
+    @media (min-width: 768px) {
+        .button-3d-front {
+            font-size: 1rem;
+            padding: 10px 24px;
+        }
+    }
+
+    .button-3d-pushable:hover {
+        filter: brightness(110%);
+    }
+
+    .button-3d-pushable:hover .button-3d-front {
+        transform: translateY(-6px);
+        transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
+    }
+
+    .button-3d-pushable:active .button-3d-front {
+        transform: translateY(-2px);
+        transition: transform 34ms;
+    }
+
+    .button-3d-pushable:hover .button-3d-shadow {
+        transform: translateY(4px);
+        transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
+    }
+
+    .button-3d-pushable:active .button-3d-shadow {
+        transform: translateY(1px);
+        transition: transform 34ms;
+    }
+
+    .button-3d-pushable:focus:not(:focus-visible) {
+        outline: none;
+    }
     body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .video-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        object-fit: cover;
+        opacity: 0.8; /* Opacidad ajustada al 80% */
+    }
+    
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3); /* Oscurece el video de fondo */
+        z-index: -1;
     }
     .login-page {
         display: flex;
-        align-items: center;
+        align-items: flex-start; /* Cambiado de center a flex-start */
         justify-content: center;
-        min-height: 80vh;
-        padding: 20px 0;
+        min-height: 60vh; /* Reducido de 80vh a 60vh */
+        padding: 40px 0 20px; /* Aumentado el padding superior a 40px */
+        margin-top: 2rem; /* Añadido margen superior */
     }
     .login-card {
         max-width: 500px;
@@ -28,7 +148,7 @@
         margin: 2rem 0;
     }
     .login-header {
-        background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+        background: linear-gradient(135deg, #92263f 0%, #62162c 100%);
         color: white;
         padding: 1.5rem;
         text-align: center;
@@ -54,24 +174,23 @@
         border-left: none;
     }
     .btn-primary {
-        background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+        background: linear-gradient(90deg, #92263f 0%, #62162c 100%);
         border: none;
         padding: 0.75rem;
         font-weight: 500;
-        letter-spacing: 0.5px;
         transition: all 0.3s ease;
     }
     .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(25, 118, 210, 0.3);
+        box-shadow: 0 5px 15px rgba(146, 38, 63, 0.3);
     }
     a {
-        color: #1976d2;
+        color: #92263f;
         text-decoration: none;
         transition: all 0.2s ease;
     }
     a:hover {
-        color: #0d47a1;
+        color: #62162c;
         text-decoration: none;
     }
     .invalid-feedback {
@@ -81,8 +200,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center login-page">
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;">
+    <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+        <source src="{% static 'videos/background.mp4' %}" type="video/mp4">
+        Tu navegador no soporta el elemento de video.
+    </video>
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3);"></div>
+</div>
+
+<div class="container d-flex justify-content-center" style="position: relative; z-index: 1; padding-top: 2rem;">
+    <div class="row justify-content-center w-100">
         <div class="col-12 col-md-8 col-lg-6">
             <div class="card login-card">
                 <div class="login-header">
@@ -125,9 +252,22 @@
                             </div>
                         </div>
                         <div class="d-grid gap-2 mb-3">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
-                            </button>
+                            <div class="btn-3d-container">
+                                <button type="submit" class="button-3d-pushable">
+                                    <span class="button-3d-shadow"></span>
+                                    <span class="button-3d-edge"></span>
+                                    <span class="button-3d-front">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                                    </span>
+                                </button>
+                                <a href="{% url 'reportes:registro_usuario' %}" class="button-3d-pushable">
+                                    <span class="button-3d-shadow"></span>
+                                    <span class="button-3d-edge"></span>
+                                    <span class="button-3d-front">
+                                        <i class="fas fa-user-plus me-2"></i>Registrarse
+                                    </span>
+                                </a>
+                            </div>
                         </div>
                         <div class="text-center">
                             <p class="mb-2">¿No tienes una cuenta? 
@@ -152,6 +292,50 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Desactivar el fondo de cuadrados en movimiento */
+    .area {
+        display: none !important;
+    }
+    
+    /* Asegurar que el video de fondo ocupe toda la pantalla */
+    body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+    
+    /* Estilo para el contenedor del login */
+    .login-page {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    /* Estilo para la tarjeta de login */
+    .login-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin: 20px auto;
+        max-width: 100%;
+    }
+    
+    .login-header {
+        background: linear-gradient(135deg, #92263f 0%, #62162c 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .login-body {
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+    }
+</style>
 
 <script>
 // Validación del formulario con Bootstrap

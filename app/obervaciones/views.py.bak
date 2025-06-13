@@ -1,0 +1,399 @@
+from datetime import timedelta
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, FormView
+from django.urls import reverse_lazy, reverse
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.utils.decorators import method_decorator
+from django.http import HttpResponseForbidden
+
+
+from reportes.models import Proyecto
+
+
+def es_editor(user):
+    """Verifica si el usuario tiene el rol de editor."""
+    return user.groups.filter(name='editores').exists()
+
+
+def es_visor(user):
+    """Verifica si el usuario tiene el rol de visor."""
+    return user.groups.filter(name='visores').exists()
+
+
+def puede_crear_observaciones(user):
+    """Verifica si el usuario puede crear observaciones (editores)."""
+    return es_editor(user)
+
+
+def puede_ver_observaciones(user):
+    """Verifica si el usuario puede ver observaciones (todos los usuarios autenticados)."""
+    return user.is_authenticated
+
+
+def puede_realizar_levantamientos(user):
+    """Verifica si el usuario puede realizar levantamientos (visores)."""
+    return es_visor(user)
+
+
+def puede_revisar_levantamientos(user):
+    """Verifica si el usuario puede revisar levantamientos (editores)."""
+    return es_editor(user)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GetRandomTableView(View):
+    """
+    Vista que devuelve un DataFrame aleatorio en formato JSON.
+    """
+    def get(self, request, *args, **kwargs):
+        try:
+            print("=== Iniciando GetRandomTableView ===")
+            # Generar el DataFrame aleatorio
+            random_df = generate_random_df()
+            print("DataFrame generado:", random_df)
+            
+            # Convertir el DataFrame a un diccionario
+            data = random_df.to_dict(orient='records')
+            
+            # Obtener los nombres de las columnas para el DataTable
+            columns = [{'data': col, 'title': col.upper()} for col in random_df.columns]
+            
+            response_data = {
+                'status': 'success',
+                'data': data,
+                'columns': columns
+            }
+            
+            print("Enviando respuesta:", response_data)
+            
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Si necesitas manejar solicitudes POST en el futuro
+            data = json.loads(request.body)
+            return JsonResponse({'status': 'success', 'data': data})
+            
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Formato JSON inválido'}, 
+                status=400
+            )
+        except Exception as e:
+            return JsonResponse(
+                {'status': 'error', 'message': str(e)}, 
+                status=500
+            )
+
+
+class TablaObservacionesView(LoginRequiredMixin, View):
+    """
+    Vista para redirigir a la nueva interfaz de observaciones de calidad.
+    Mantenida por compatibilidad con enlaces existentes.
+    """
+    def get(self, request, *args, **kwargs):
+        proyecto_id = request.GET.get('proyecto_id')
+        if proyecto_id:
+            # Redirigir a la nueva vista de lista de observaciones
+            return redirect('obervaciones:lista_observaciones', proyecto_id=proyecto_id)
+        # Si no hay proyecto_id, redirigir al dashboard
+        return redirect('reportes:dashboard')
+
+
+@method_decorator(login_required, name='dispatch')
+class ListaObservacionesCalidadView(LoginRequiredMixin, ListView):
+    """
+    Vista para listar todas las observaciones de calidad de un proyecto.
+    Los visores solo ven las observaciones que tienen asignadas.
+    """
+    model = ObservacionCalidad
+    template_name = 'obervaciones/lista_observaciones_calidad.html'
+    context_object_name = 'observaciones'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        self.proyecto = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        queryset = ObservacionCalidad.objects.filter(proyecto=self.proyecto)
+        
+        # Si el usuario es visor, solo puede ver las observaciones que le asignaron
+        if es_visor(self.request.user):
+            queryset = queryset.filter(asignado_a=self.request.user)
+            
+        return queryset.order_by('-fecha', 'item')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.proyecto
+        context['es_editor'] = es_editor(self.request.user)
+        context['es_visor'] = es_visor(self.request.user)
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class CrearObservacionCalidadView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    """
+    Vista para crear una nueva observación de calidad.
+    Solo disponible para usuarios con rol de editor.
+    """
+    model = ObservacionCalidad
+    form_class = ObservacionCalidadForm
+    template_name = 'obervaciones/observacion_calidad_form.html'
+    
+    def test_func(self):
+        return puede_crear_observaciones(self.request.user)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, 'No tiene permiso para crear observaciones.')
+        return redirect('obervaciones:lista_observaciones', proyecto_id=self.kwargs['proyecto_id'])
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        kwargs['usuario'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'La observación se ha creado correctamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('obervaciones:lista_observaciones', kwargs={
+            'proyecto_id': self.kwargs['proyecto_id']
+        })
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        context['titulo'] = 'Nueva Observación de Calidad'
+        context['es_editor'] = True
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class EditarObservacionCalidadView(LoginRequiredMixin, UpdateView):
+    """
+    Vista para editar una observación de calidad existente.
+    """
+    model = ObservacionCalidad
+    form_class = ObservacionCalidadForm
+    template_name = 'obervaciones/observacion_calidad_form.html'
+    pk_url_kwarg = 'observacion_id'
+    
+    def get_queryset(self):
+        return ObservacionCalidad.objects.filter(proyecto_id=self.kwargs['proyecto_id'])
+    
+    def get_success_url(self):
+        return reverse('obervaciones:lista_observaciones', kwargs={
+            'proyecto_id': self.kwargs['proyecto_id']
+        })
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        context['titulo'] = 'Editar Observación de Calidad'
+        context['editar'] = True
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'La observación se ha actualizado correctamente.')
+        return super().form_valid(form)
+
+
+@method_decorator(login_required, name='dispatch')
+class EliminarObservacionCalidadView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """
+    Vista para eliminar una observación de calidad.
+    Solo disponible para usuarios con rol de editor.
+    """
+    model = ObservacionCalidad
+    pk_url_kwarg = 'observacion_id'
+    template_name = 'obervaciones/confirmar_eliminar_observacion.html'
+    
+    def test_func(self):
+        return puede_crear_observaciones(self.request.user)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, 'No tiene permiso para eliminar observaciones.')
+        return redirect('obervaciones:lista_observaciones', proyecto_id=self.kwargs['proyecto_id'])
+    
+    def get_queryset(self):
+        return ObservacionCalidad.objects.filter(
+            proyecto_id=self.kwargs['proyecto_id'],
+            creado_por=self.request.user  # Solo el creador puede eliminar
+        )
+    
+    def get_success_url(self):
+        messages.success(self.request, 'La observación se ha eliminado correctamente.')
+        return reverse('obervaciones:lista_observaciones', kwargs={
+            'proyecto_id': self.kwargs['proyecto_id']
+        })
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        context['es_editor'] = True
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class DetalleObservacionCalidadView(LoginRequiredMixin, DetailView):
+    """
+    Vista para ver los detalles de una observación de calidad.
+    Los visores solo ven las observaciones que tienen asignadas.
+    """
+    model = ObservacionCalidad
+    template_name = 'obervaciones/detalle_observacion.html'
+    pk_url_kwarg = 'observacion_id'
+    context_object_name = 'observacion'
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.filter(proyecto_id=self.kwargs['proyecto_id'])
+        
+        # Si el usuario es visor, solo puede ver las observaciones que le asignaron
+        if es_visor(self.request.user):
+            queryset = queryset.filter(asignado_a=self.request.user)
+            
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        observacion = self.get_object()
+        context['proyecto'] = observacion.proyecto
+        
+        # Verificar roles de usuario
+        context['es_editor'] = es_editor(self.request.user)
+        context['es_visor'] = es_visor(self.request.user)
+        
+        # Obtener el levantamiento si existe
+        try:
+            context['levantamiento'] = LevantamientoObservacion.objects.get(observacion=observacion)
+            context['tiene_levantamiento'] = True
+        except LevantamientoObservacion.DoesNotExist:
+            context['tiene_levantamiento'] = False
+        
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class CrearLevantamientoView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    """
+    Vista para crear un nuevo levantamiento de observación.
+    Solo disponible para usuarios con rol de visor.
+    """
+    model = LevantamientoObservacion
+    form_class = LevantamientoObservacionForm
+    template_name = 'obervaciones/levantamiento_form.html'
+    
+    def test_func(self):
+        return puede_realizar_levantamientos(self.request.user)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, 'No tiene permiso para realizar levantamientos.')
+        return redirect('obervaciones:lista_observaciones', proyecto_id=self.kwargs['proyecto_id'])
+    
+    def get_observacion(self):
+        """Obtiene la observación asociada al levantamiento."""
+        return get_object_or_404(
+            ObservacionCalidad,
+            id=self.kwargs['observacion_id'],
+            proyecto_id=self.kwargs['proyecto_id'],
+            asignado_a=self.request.user  # Solo puede levantar observaciones asignadas
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        observacion = self.get_observacion()
+        context['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        context['observacion'] = observacion
+        context['titulo'] = 'Registrar Levantamiento de Observación'
+        context['es_visor'] = True
+        
+        # Pasar la fecha de observación al contexto para usarla en el template
+        context['fecha_observacion'] = observacion.fecha.strftime('%Y-%m-%d')
+        
+        return context
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['observacion'] = self.get_observacion()
+        return kwargs
+        
+    def form_valid(self, form):
+        form.instance.observacion = self.get_observacion()
+        form.instance.creado_por = self.request.user
+        
+        # Calcular el tiempo de levantamiento basado en los días transcurridos
+        if form.cleaned_data.get('fecha_levantamiento'):
+            observacion = self.get_observacion()
+            dias_transcurridos = (form.cleaned_data['fecha_levantamiento'] - observacion.fecha).days
+            form.instance.tiempo_levantamiento = timedelta(days=dias_transcurridos)
+        
+        messages.success(self.request, 'El levantamiento se ha registrado correctamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('obervaciones:detalle_observacion', kwargs={
+            'proyecto_id': self.kwargs['proyecto_id'],
+            'observacion_id': self.kwargs['observacion_id']
+        })
+
+
+@method_decorator(login_required, name='dispatch')
+class RevisarLevantamientoView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """
+    Vista para que los editores revisen los levantamientos.
+    Solo disponible para usuarios con rol de editor.
+    """
+    model = LevantamientoObservacion
+    form_class = RevisarLevantamientoForm
+    template_name = 'obervaciones/revisar_levantamiento.html'
+    pk_url_kwarg = 'levantamiento_id'
+    
+    def test_func(self):
+        return puede_revisar_levantamientos(self.request.user)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, 'No tiene permiso para revisar levantamientos.')
+        return redirect('obervaciones:lista_observaciones', proyecto_id=self.kwargs['proyecto_id'])
+    
+    def get_queryset(self):
+        return LevantamientoObservacion.objects.filter(
+            observacion__proyecto_id=self.kwargs['proyecto_id'],
+            observacion_id=self.kwargs['observacion_id']
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, id=self.kwargs['proyecto_id'])
+        context['observacion'] = self.object.observacion
+        context['titulo'] = 'Revisar Levantamiento de Observación'
+        context['es_editor'] = True
+        return context
+    
+    def form_valid(self, form):
+    
+    def get_success_url(self):
+        return reverse('obervaciones:detalle_observacion', kwargs={
+            'proyecto_id': self.kwargs['proyecto_id'],
+            'observacion_id': self.kwargs['observacion_id']
+        })
+
+
+def home(request):
+    return HttpResponse("Página de inicio de observaciones")
+
+def about(request):
+    return render(request, 'obervaciones/about.html', {'title': 'Acerca de'})

@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2>Formulario Simplificado SSOMA</h2>
+                    <form method="post" action="/obervaciones/proyecto/1/observaciones/ssoma/nueva/" id="ssoma-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Campos visibles -->
+                        <div class="mb-3">
+                            <label for="item" class="form-label">Ítem</label>
+                            <input type="text" class="form-control" id="item" name="item" value="SSO-001" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tipo_observacion" class="form-label">Tipo de Observación</label>
+                            <select class="form-select" id="tipo_observacion" name="tipo_observacion" required>
+                                <option value="Acto Inseguro" selected>Acto Inseguro</option>
+                                <option value="Condición Insegura">Condición Insegura</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="area" class="form-label">Área</label>
+                            <select class="form-select" id="area" name="area" required>
+                                <option value="Operaciones" selected>Operaciones</option>
+                                <option value="Administración">Administración</option>
+                                <option value="Logística">Logística</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="semana_obs" class="form-label">Semana de Observación</label>
+                            <input type="text" class="form-control" id="semana_obs" name="semana_obs" value="Semana 24" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fecha" class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" value="2025-06-09" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="punto_inspeccion" class="form-label">Punto de Inspección</label>
+                            <select class="form-select" id="punto_inspeccion" name="punto_inspeccion" required>
+                                <option value="Área de Trabajo" selected>Área de Trabajo</option>
+                                <option value="Equipos">Equipos</option>
+                                <option value="Personal">Personal</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subclasificacion" class="form-label">Subclasificación</label>
+                            <select class="form-select" id="subclasificacion" name="subclasificacion" required>
+                                <option value="Procedimiento de Trabajo" selected>Procedimiento de Trabajo</option>
+                                <option value="EPP">EPP</option>
+                                <option value="Herramientas">Herramientas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required>Descripción de prueba</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="accion_correctiva" class="form-label">Acción Correctiva</label>
+                            <textarea class="form-control" id="accion_correctiva" name="accion_correctiva" rows="3" required>Acción correctiva de prueba</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="nivel_riesgo" class="form-label">Nivel de Riesgo</label>
+                            <select class="form-select" id="nivel_riesgo" name="nivel_riesgo" required>
+                                <option value="Alto">Alto</option>
+                                <option value="Medio" selected>Medio</option>
+                                <option value="Bajo">Bajo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="Pendiente" selected>Pendiente</option>
+                                <option value="En Proceso">En Proceso</option>
+                                <option value="Atendido">Atendido</option>
+                                <option value="Cerrado">Cerrado</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="submit-btn">Guardar Observación</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('ssoma-form');
+        
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                console.log('Formulario enviado');
+                
+                // Solo para depuración, no bloqueamos el envío
+                const formData = new FormData(form);
+                console.log('Datos del formulario:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}: ${value}`);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

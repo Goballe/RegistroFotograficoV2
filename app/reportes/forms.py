@@ -209,9 +209,9 @@ FotoFormSet = inlineformset_factory(
     ReporteFotografico, 
     FotoReporte, 
     form=FotoForm, 
-    extra=1, 
+    extra=3,  # Mostrar 3 formularios vacíos por defecto
     can_delete=True,
-    max_num=50,  # Ahora permite hasta 50 fotos
+    max_num=50,  # Permite hasta 50 fotos
     validate_max=True,
     fields=('imagen', 'descripcion')
 )

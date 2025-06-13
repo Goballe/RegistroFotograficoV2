@@ -47,22 +47,26 @@
     font-size: 1rem;
     margin-bottom: 0.5rem;
     color: #2d3748;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .formulario-btn .formulario-desc {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: #718096;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    text-transform: none;
 }
 
 .formulario-btn .badge {
     margin-top: 0.5rem;
     font-weight: 500;
-    font-size: 0.7rem;
-    padding: 0.35em 0.65em;
-    border-radius: 50rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
     background: rgba(66, 153, 225, 0.1);
-    color: #4299e1;
+    color: #2b6cb0;
+    text-transform: uppercase;
 }
 
 /* Estilos para cuando el botón está activo/seleccionado */
@@ -72,7 +76,7 @@
 }
 
 .formulario-card.active .formulario-btn i {
-    color: #0ea5e9;
+    color: #62162c;
     transform: scale(1.1);
 }
 
@@ -82,7 +86,7 @@
 }
 
 .formulario-card:not(.active):hover .formulario-btn i {
-    color: #0ea5e9;
+    color: #62162c;
     transform: scale(1.1);
 }
 
@@ -103,7 +107,7 @@
 
 /* Estilos para el botón de crear */
 #btn-crear-nuevo {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #62162c 0%, #62162c 100%);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -121,7 +125,7 @@
 #btn-crear-nuevo:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #   62162c 0%, #62162c 100%);
 }
 
 #btn-crear-nuevo:disabled {
@@ -176,29 +180,29 @@
                         <button type="button" class="formulario-btn" data-formulario="{{ tipo.nombre }}">
                             {% if tipo_nombre == 'REPORTE FOTOGRÁFICO' or tipo_nombre == 'REPORTE FOTOGRAFICO' %}
                                 <i class="bi bi-camera-fill"></i>
-                                <span class="formulario-titulo">Reporte Fotográfico</span>
+                                <span class="formulario-titulo">REPORTE FOTOGRÁFICO</span>
                                 <span class="formulario-desc">Documentación visual</span>
-                                <span class="badge">Fotos</span>
+                                <span class="badge">FOTOS</span>
                             {% elif tipo_nombre == 'REPORTE DIARIO' %}
                                 <i class="bi bi-journal-text"></i>
-                                <span class="formulario-titulo">Reporte Diario</span>
+                                <span class="formulario-titulo">REPORTE DIARIO</span>
                                 <span class="formulario-desc">Actividades del día</span>
-                                <span class="badge">Diario</span>
+                                <span class="badge">DIARIO</span>
                             {% elif tipo_nombre == 'CONTROL DE OBS CALIDAD' %}
                                 <i class="bi bi-clipboard-check"></i>
-                                <span class="formulario-titulo">Observaciones</span>
+                                <span class="formulario-titulo">OBSERVACIONES</span>
                                 <span class="formulario-desc">Control de calidad</span>
                                 <span class="badge">OBS</span>
-                            {% elif tipo_nombre == 'CONTROL DE NC CALIDAD' %}
-                                <i class="bi bi-exclamation-triangle"></i>
-                                <span class="formulario-titulo">No Conformidades</span>
-                                <span class="formulario-desc">Control de calidad</span>
-                                <span class="badge">NC</span>
+                            {% elif tipo_nombre == 'CONTROL DE OBS SSOMA' %}
+                                <i class="bi bi-shield-check"></i>
+                                <span class="formulario-titulo">OBSERVACIONES SSOMA</span>
+                                <span class="formulario-desc">Control de seguridad</span>
+                                <span class="badge">OBS</span>
                             {% elif tipo_nombre == 'CONTROL DE NC SSOMA' %}
-                                <i class="bi bi-shield-exclamation"></i>
-                                <span class="formulario-titulo">SSOMA</span>
-                                <span class="formulario-desc">No conformidades</span>
-                                <span class="badge">SSOMA</span>
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span class="formulario-titulo">NO CONFORMIDADES</span>
+                                <span class="formulario-desc">Seguridad y medio ambiente</span>
+                                <span class="badge">NC SSOMA</span>
                             {% elif tipo_nombre == 'CONTROL DE RFI' %}
                                 <i class="bi bi-question-square"></i>
                                 <span class="formulario-titulo">RFI</span>
@@ -238,36 +242,51 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end mb-4">
-        <button id="btn-crear-nuevo" class="modern-btn" style="min-width:180px;" disabled>
-            <i class="bi bi-plus-circle me-2"></i><span id="texto-btn-crear">CREAR NUEVO</span>
-        </button>
-    </div>
+    <!-- Botón de crear eliminado -->
 
     <div id="tabla-reportes-container" class="mb-4"></div>
+    
+    <!-- Contenedor para la tabla aleatoria -->
+    <div id="tabla-aleatoria-container" class="card shadow-sm mb-4" style="display: none;">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Datos de Observaciones</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tabla-aleatoria" class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr id="tabla-aleatoria-cabecera">
+                            <!-- Las columnas se generarán dinámicamente -->
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-aleatoria-cuerpo">
+                        <!-- Los datos se generarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
 {% csrf_token %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    let proyectoId = '{{ proyecto.id }}';
     let tipoFormularioSeleccionado = null;
-    const btnCrear = document.getElementById('btn-crear-nuevo');
-    const textoBtnCrear = document.getElementById('texto-btn-crear');
-    const proyectoId = '{{ proyecto.id }}';
     const tablaReportesContainer = document.getElementById('tabla-reportes-container');
-
-    // Inicializa el botón crear
-    btnCrear.disabled = true;
-    textoBtnCrear.textContent = 'SELECCIONE UN FORMULARIO';
-    
-    // Mejorar la accesibilidad
-    document.querySelectorAll('.formulario-btn').forEach(btn => {
-        btn.setAttribute('aria-label', `Seleccionar formulario de ${btn.querySelector('.formulario-titulo')?.textContent || 'tipo de formulario'}`);
-    });
 
     // Función para renderizar la tabla de reportes
     function renderTablaReportes(reportes) {
-        if (!reportes || reportes.length === 0) {
+        // No mostrar mensaje de 'No hay reportes' para OBSERVACIONES o CONTROL DE OBS CALIDAD
+        const esObservacion = tipoFormularioSeleccionado && 
+                            (tipoFormularioSeleccionado.toUpperCase() === 'OBSERVACIONES' || 
+                             tipoFormularioSeleccionado.toUpperCase() === 'CONTROL DE OBS CALIDAD');
+        
+        if ((!reportes || reportes.length === 0) && !esObservacion) {
             tablaReportesContainer.innerHTML = `<div class='alert alert-info text-center mt-3'>No hay reportes creados para este tipo de formulario.<br><small>¡Crea el primero usando el botón!</small></div>`;
+            return;
+        } else if (esObservacion && (!reportes || reportes.length === 0)) {
+            // Para OBSERVACIONES, simplemente mostramos una tabla vacía sin el mensaje
+            tablaReportesContainer.innerHTML = '';
             return;
         }
         let html = `<div class="table-responsive"><table class="table table-striped table-hover align-middle shadow-sm rounded">
@@ -352,13 +371,6 @@ inputFecha.addEventListener('input', aplicarFiltros);
         // Mostrar estado de carga
         mostrarCarga();
         
-        // Configurar el botón de crear
-        btnCrear.disabled = false;
-        textoBtnCrear.textContent = `CREAR ${tipo}`;
-        
-        // Guardar el tipo de formulario seleccionado
-        tipoFormularioSeleccionado = tipo;
-        
         // Construir la URL de la API de manera absoluta
         const baseUrl = window.location.origin;
         const url = `${baseUrl}/reportes/api/reportes_por_tipo/?proyecto_id=${proyectoId}&tipo_formulario=${encodeURIComponent(tipo)}`;
@@ -413,15 +425,89 @@ inputFecha.addEventListener('input', aplicarFiltros);
             </div>`;
     }
     
-    // Función para cargar reportes por tipo
-    function cargarReportesPorTipo(tipo) {
-        mostrarCarga();
+    // Mapeo de tipos de formulario a sus respectivas rutas
+    // Mapeo de tipos de formulario a sus respectivas rutas
+    const rutasFormularios = {
+        'OBSERVACIONES': `/obervaciones/proyecto/${proyectoId}/observaciones/`,
+        'CONTROL DE OBS CALIDAD': `/obervaciones/proyecto/${proyectoId}/observaciones/`,
+        'CONTROL DE OBS SSOMA': `/obervaciones/proyecto/${proyectoId}/observaciones/ssoma/`,
+        'REPORTE FOTOGRÁFICO': `/reportes/reportes/fotograficos/${proyectoId}/`,
+        'REPORTE FOTOGRAFICO': `/reportes/reportes/fotograficos/${proyectoId}/`,
+        'REPORTE DIARIO': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=REPORTE%20DIARIO`,
+        'CONTROL DE NC CALIDAD': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20NC%20CALIDAD`,
+        'CONTROL DE NC SSOMA': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20NC%20SSOMA`,
+        'CONTROL DE RFI': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20RFI`,
+        'CONTROL DE ODC': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20ODC`,
+        'CONTROL DE VALORIZACIONES': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20VALORIZACIONES`,
+        'CONTROL DE DOSSIER': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20DOSSIER`,
+        'CONTROL DE CARTAS': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20CARTAS`
+    };
+    
+    // Agregar mensaje de depuración
+    console.log('Rutas configuradas:', rutasFormularios);
+    
+    console.log('Rutas de formularios configuradas:', rutasFormularios);
+
+    // Maneja clic en botones de tipo de formulario
+    document.querySelectorAll('.formulario-card[data-formulario]').forEach(card => {
+        card.addEventListener('click', function(event) {
+            // Prevenir múltiples clics rápidos
+            if (this.classList.contains('clicked')) {
+                return;
+            }
+            
+            // Marcar como clickeado temporalmente para evitar múltiples clics
+            this.classList.add('clicked');
+            
+            // Mostrar indicador de carga
+            const originalContent = this.innerHTML;
+            this.innerHTML = `
+                <div class="d-flex flex-column align-items-center justify-content-center" style="height: 100%;">
+                    <div class="spinner-border text-primary mb-2" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <small class="text-muted">Cargando...</small>
+                </div>`;
+            
+            const tipo = this.getAttribute('data-formulario');
+            const tipoUpper = tipo.toUpperCase();
+            
+            // Obtener la ruta correspondiente al tipo de formulario
+            let ruta = rutasFormularios[tipoUpper];
+            
+            console.log('Tipo de formulario seleccionado:', tipoUpper);
+            console.log('Ruta encontrada:', ruta);
+            
+            if (!ruta) {
+                // Si no se encuentra una ruta específica, usar una ruta por defecto
+                ruta = `/reportes/crear/?proyecto=${proyectoId}&tipo_formulario=${encodeURIComponent(tipo)}`;
+                console.log('Usando ruta por defecto:', ruta);
+            }
+            
+            // Redirigir después de un pequeño retraso para permitir ver la animación
+            console.log('Redirigiendo a:', ruta);
+            setTimeout(() => {
+                window.location.href = ruta;
+            }, 300);
+        });
+    });
+
+    // Función para cargar y mostrar la tabla aleatoria
+    function cargarTablaAleatoria() {
+        const tablaContainer = document.getElementById('tabla-aleatoria-container');
+        const tablaCuerpo = document.getElementById('tabla-aleatoria-cuerpo');
+        const tablaCabecera = document.getElementById('tabla-aleatoria-cabecera');
         
-        const url = `/reportes/api/reportes_por_tipo/?proyecto_id=${proyectoId}&tipo_formulario=${encodeURIComponent(tipo)}`;
-        console.log('Solicitando URL:', url);
+        // Mostrar el contenedor de la tabla y establecer estilos
+        tablaContainer.style.display = 'block';
+        tablaContainer.scrollIntoView({ behavior: 'smooth' });
         
-        fetch(url, {
-            credentials: 'same-origin',  // Incluir credenciales (cookies) en la solicitud
+        // Mostrar estado de carga
+        tablaCuerpo.innerHTML = '<tr><td colspan="100%" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando datos de observaciones...</p></td></tr>';
+        
+        // Realizar la petición a la API
+        fetch('/observaciones/get_random_table/', {
+            method: 'GET',
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -429,87 +515,88 @@ inputFecha.addEventListener('input', aplicarFiltros);
             }
         })
         .then(response => {
-            console.log('Respuesta recibida. Estado:', response.status);
             if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Error en la respuesta:', text);
-                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
-                });
+                throw new Error('Error al cargar los datos');
             }
             return response.json();
         })
         .then(data => {
-            console.log('Datos recibidos:', data);
-            if (data.error) {
-                throw new Error(data.error);
+            if (data.status === 'success') {
+                // Limpiar la tabla
+                tablaCabecera.innerHTML = '';
+                tablaCuerpo.innerHTML = '';
+                
+                // Agregar encabezados
+                if (data.columns && data.columns.length > 0) {
+                    data.columns.forEach(col => {
+                        const th = document.createElement('th');
+                        th.textContent = col.title;
+                        th.scope = 'col';
+                        tablaCabecera.appendChild(th);
+                    });
+                    
+                    // Agregar filas
+                    if (data.data && data.data.length > 0) {
+                        data.data.forEach(fila => {
+                            const tr = document.createElement('tr');
+                            data.columns.forEach(col => {
+                                const td = document.createElement('td');
+                                td.textContent = fila[col.data] !== undefined ? fila[col.data] : '';
+                                tr.appendChild(td);
+                            });
+                            tablaCuerpo.appendChild(tr);
+                        });
+                    } else {
+                        const tr = document.createElement('tr');
+                        const td = document.createElement('td');
+                        td.colSpan = data.columns.length;
+                        td.className = 'text-center py-4 text-muted';
+                        td.textContent = 'No se encontraron datos';
+                        tr.appendChild(td);
+                        tablaCuerpo.appendChild(tr);
+                    }
+                }
+            } else {
+                throw new Error(data.message || 'Error desconocido al cargar los datos');
             }
-            // Asegurarnos de que data.reportes existe y es un array
-            const reportes = data.reportes || [];
-            renderTablaReportes(reportes);
         })
         .catch(error => {
-            console.error('Error al cargar reportes:', error);
-            mostrarError('Error al cargar los reportes. ' + (error.message || 'Por favor, intente nuevamente.'));
-            // Restablecer el botón de crear
-            btnCrear.disabled = true;
-            textoBtnCrear.textContent = 'SELECCIONE UN FORMULARIO';
+            console.error('Error:', error);
+            tablaCuerpo.innerHTML = `
+                <tr>
+                    <td colspan="100%" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        ${error.message || 'Error al cargar los datos'}
+                    </td>
+                </tr>`;
         });
     }
-
-    // Maneja clic en botones de tipo de formulario
+    
+    // Función para manejar la redirección
+    function redirigirATipoFormulario(tipo) {
+        const tipoUpper = tipo.toUpperCase();
+        let ruta = rutasFormularios[tipoUpper];
+        
+        if (!ruta) {
+            // Si no se encuentra una ruta específica, mostrar un mensaje de error
+            console.error(`No se encontró una ruta configurada para el tipo de formulario: ${tipo}`);
+            alert(`No se pudo abrir el formulario. El tipo '${tipo}' no está configurado.`);
+            return;
+        }
+        
+        console.log(`Redirigiendo a: ${ruta}`);
+        // Redirigir a la ruta correspondiente
+        window.location.href = ruta;
+    }
+    
+    // Manejar clic en las tarjetas de formulario
     document.querySelectorAll('.formulario-card[data-formulario]').forEach(card => {
         card.addEventListener('click', function(event) {
-            // Prevenir múltiples clics en el mismo formulario
-            if (this.classList.contains('active')) {
-                return;
-            }
-            
+            event.preventDefault();
             const tipo = this.getAttribute('data-formulario');
-            
-            // Remover clase de tarjeta activa de todas las tarjetas
-            document.querySelectorAll('.formulario-card').forEach(c => {
-                c.classList.remove('active');
-            });
-            
-            // Agregar clase a la tarjeta clickeada
-            this.classList.add('active');
-            
-            // Actualizar el botón de crear
-            tipoFormularioSeleccionado = tipo;
-            btnCrear.disabled = false;
-            
-            // Formatear el nombre del tipo para mostrarlo en el botón
-            let nombreTipo = tipo;
-            if (tipo.length > 15) {
-                // Acortar nombres largos
-                const palabras = tipo.split(' ');
-                if (palabras.length > 2) {
-                    nombreTipo = palabras.map(p => p[0]).join('');
-                } else {
-                    nombreTipo = palabras[0];
-                }
-            }
-            textoBtnCrear.textContent = `NUEVO ${nombreTipo.toUpperCase()}`;
-            
-            // Animar el botón de crear
-            btnCrear.classList.remove('boton-verde-bounce');
-            void btnCrear.offsetWidth; // Trigger reflow
-            btnCrear.classList.add('boton-verde-bounce');
-            setTimeout(() => {
-                btnCrear.classList.remove('boton-verde-bounce');
-            }, 2000);
-            
-            // Cargar los reportes del tipo seleccionado
-            cargarReportesPorTipo(tipo);
+            redirigirATipoFormulario(tipo);
         });
     });
-
-    // Acción del botón crear
-    btnCrear.onclick = function() {
-        if (!tipoFormularioSeleccionado) return;
-        const url = `{% url 'reportes:crear_reporte' %}?proyecto=${proyectoId}&tipo_formulario=${encodeURIComponent(tipoFormularioSeleccionado)}`;
-        window.location.href = url;
-    };
 });
 </script>
 {% if abrir_pdf_id %}

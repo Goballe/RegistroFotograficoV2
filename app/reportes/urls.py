@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
 from . import views
 
 app_name = 'reportes'
@@ -11,6 +12,9 @@ urlpatterns = [
     path('registro/', views.registro_usuario, name='registro_usuario'),
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
     path('cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
+    
+    # URLs de observaciones
+    path('observaciones/', include('obervaciones.urls')),
     
     # Dashboard y proyectos
     path('dashboard/', views.dashboard, name='dashboard'),
@@ -24,8 +28,10 @@ urlpatterns = [
     path('reporte/crear/', views.crear_reporte, name='crear_reporte'),
     path('reporte/editar/<int:reporte_id>/', views.editar_reporte, name='editar_reporte'),
     path('reporte/editar_reporte/<int:reporte_id>/', views.editar_reporte, name='editar_reporte_alt'),
+    path('reporte/ver/<int:reporte_id>/', views.ver_reporte, name='ver_reporte'),
     path('borrar/<int:reporte_id>/', views.borrar_reporte, name='borrar_reporte'),
     path('reporte/pdf/<int:reporte_id>/', views.reporte_pdf, name='reporte_pdf'),
+    path('reportes/fotograficos/<int:proyecto_id>/', views.lista_reportes_fotograficos, name='lista_reportes_fotograficos'),
     
     # APIs
     path('api/reportes_por_tipo/', views.api_reportes_por_tipo, name='api_reportes_por_tipo'),

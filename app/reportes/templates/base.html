@@ -11,14 +11,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'reportes/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'reportes/css/background.css' %}">
     <style>
+      @import url('https://fonts.cdnfonts.com/css/century-gothic');
+      
+      body {
+        font-family: 'Century Gothic', 'Exo', sans-serif;
+        color: #333;
+      }
+      
       .nav-link-hover {
         position: absolute;
         bottom: 0;
         left: 0;
         width: 0;
         height: 3px;
-        background: #ffeb3b;
+        background: #62162c;
         transition: width 0.3s ease;
       }
       .nav-link {
@@ -36,7 +44,7 @@
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
       }
       .nav-link i {
-        color: #ffeb3b;
+        color: #62162c;
         transition: transform 0.3s ease;
       }
       .nav-link:hover i {
@@ -45,48 +53,68 @@
     </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="d-flex flex-column min-vh-100">
-<nav class="navbar navbar-expand-lg navbar-dark mb-4" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 50%, #42a5f5 100%); box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 0.8rem 0; transition: all 0.3s ease;">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}" style="padding: 0.3rem 0; transition: all 0.3s ease;">
-      <div class="logo-container" style="display: flex; align-items: center;">
-        <img src="{% static 'img/logo_jlv2.jpg' %}" alt="Logo" 
-             style="height: 44px; width: auto; 
-                    border-radius: 8px; 
-                    background: linear-gradient(145deg, #ffffff, #e6e6e6);
-                    padding: 6px; 
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.15), 
-                                0 0 0 2px rgba(255,255,255,0.3);
-                    transition: all 0.3s ease;
-                    transform-style: preserve-3d;
-                    backface-visibility: hidden;
-                    will-change: transform;">
-      </div>
+<body class="d-flex flex-column min-vh-100" style="padding-top: 56px;">
+<nav class="navbar navbar-expand-lg navbar-light fixed-top py-2" style="background: rgba(255, 255, 255, 0.98) !important; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; z-index: 1030;">
+  <style>
+    .navbar-nav .nav-link {
+      color: #333 !important;
+      font-size: 0.95rem;
+      padding: 0.5rem 1rem !important;
+      position: relative;
+    }
+    .navbar-toggler {
+      border: none;
+      padding: 0.5rem;
+    }
+    .navbar-toggler:focus {
+      box-shadow: none;
+      outline: none;
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(51, 51, 51, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+      width: 1.5em;
+      height: 1.5em;
+    }
+    .dropdown-menu {
+      border: none;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+      border-radius: 0.5rem;
+      padding: 0.5rem 0;
+      margin-top: 0.5rem;
+    }
+    .dropdown-item {
+      padding: 0.5rem 1.5rem;
+      font-size: 0.9rem;
+    }
+    .dropdown-item:hover {
+      background-color: #f8f9fa;
+    }
+    .dropdown-divider {
+      margin: 0.5rem 0;
+    }
+  </style>
+  <div class="container">
+    <a class="navbar-brand p-0" href="{% url 'home' %}">
+      <img src="{% static 'img/Logo-JLV2.png' %}" alt="Logo" style="height: 60px; transition: all 0.3s ease;">
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav me-auto align-items-center">
         {% if user.is_authenticated %}
-          <li class="nav-item position-relative">
-            <a class="nav-link px-3" href="{% url 'reportes:dashboard' %}" 
-               style="font-weight: 500; letter-spacing: 0.5px; transition: all 0.3s ease;
-                      position: relative; overflow: hidden;">
-              <i class="fas fa-home me-1" style="color: #ffeb3b;"></i>
-              <span style="position: relative; z-index: 1;">Inicio</span>
-              <span class="nav-link-hover" 
-                    style="position: absolute; bottom: 0; left: 0; 
-                           width: 0; height: 3px; background: #ffeb3b;
-                           transition: width 0.3s ease;"></span>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'reportes:dashboard' %}">
+              <i class="fas fa-home me-1" style="color: #62162c;"></i>
+              <span>Inicio</span>
             </a>
           </li>
           {% if user.rol == 'ADMINISTRADOR' or user.is_superuser %}
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="proyectosDropdown" role="button" data-bs-toggle="dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="proyectosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="fas fa-project-diagram me-1"></i> Proyectos
             </a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" aria-labelledby="proyectosDropdown">
               <li><a class="dropdown-item" href="{% url 'reportes:listar_proyectos' %}">
                 <i class="fas fa-list me-2"></i>Ver todos
               </a></li>
@@ -98,68 +126,73 @@
           {% endif %}
         {% endif %}
       </ul>
-      <ul class="navbar-nav">
+      <ul class="navbar-nav align-items-center">
         {% if user.is_authenticated %}
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-              <i class="fas fa-user-circle me-2" style="font-size: 1.2rem;"></i>
-              <span class="d-inline">{{ user.get_full_name|default:user.username }}</span>
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle me-2" style="font-size: 1.4rem; color: #333;"></i>
+                <span class="d-none d-lg-inline">{{ user.get_full_name|default:user.username|truncatechars:20 }}</span>
+              </div>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                <div class="dropdown-header text-center">
-                  <div class="mb-2">
-                    <i class="fas fa-user-circle" style="font-size: 2.5rem;"></i>
-                  </div>
-                  <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
-                  <div class="small text-muted">{{ user.email }}</div>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li class="px-3 py-2 text-center">
+                <div class="mb-2">
+                  <i class="fas fa-user-circle" style="font-size: 2.5rem; color: #6c757d;"></i>
                 </div>
+                <h6 class="mb-0 fw-bold">{{ user.get_full_name|default:user.username }}</h6>
+                <small class="text-muted">{{ user.email|truncatechars:25 }}</small>
               </li>
-              <li><hr class="dropdown-divider"></li>
+              <li><hr class="dropdown-divider my-2"></li>
               <li>
                 <a class="dropdown-item" href="{% url 'reportes:perfil_usuario' %}">
-                  <i class="fas fa-user me-2"></i>Mi Perfil
+                  <i class="fas fa-user me-2" style="width: 1.25rem; text-align: center;"></i>Mi Perfil
                 </a>
               </li>
               <li>
                 <a class="dropdown-item" href="{% url 'reportes:cambiar_contrasena' %}">
-                  <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                  <i class="fas fa-key me-2" style="width: 1.25rem; text-align: center;"></i>Cambiar Contraseña
                 </a>
               </li>
               {% if user.is_staff %}
               <li><hr class="dropdown-divider"></li>
               <li>
                 <a class="dropdown-item" href="{% url 'admin:index' %}">
-                  <i class="fas fa-cog me-2"></i>Panel de Administración
+                  <i class="fas fa-cog me-2" style="width: 1.25rem; text-align: center;"></i>Panel de Administración
                 </a>
-              {% endif %}
               </li>
+              {% endif %}
               <li><hr class="dropdown-divider"></li>
               <li>
                 <a class="dropdown-item text-danger" href="{% url 'reportes:logout' %}">
-                  <i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión
+                  <i class="fas fa-sign-out-alt me-2" style="width: 1.25rem; text-align: center;"></i>Cerrar sesión
                 </a>
               </li>
             </ul>
           </li>
         {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'reportes:login' %}">
-              <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-outline-light btn-sm ms-2" href="{% url 'reportes:registro_usuario' %}" style="padding: 0.25rem 0.75rem;">
-              Registrarse
-            </a>
-          </li>
+          <!-- Enlaces de autenticación eliminados según solicitud -->
         {% endif %}
       </ul>
     </div>
   </div>
 </nav>
 
-    <main class="flex-grow-1">
+    <div class="area">
+        <ul class="circles">
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+    <main class="flex-grow-1 content-wrapper">
         {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show m-3" role="alert">
@@ -175,17 +208,9 @@
         </div>
     </main>
 
-    <footer class="bg-dark text-white py-4 mt-auto">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Registro Fotográfico</h5>
-                    <p class="mb-0">Sistema de gestión de reportes fotográficos</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="mb-0">  {% now "Y" %} Todos los derechos reservados</p>
-                </div>
-            </div>
+    <footer class="bg-dark text-white py-3 mt-auto">
+        <div class="container text-center">
+            <p class="mb-0">Sistema de gestión de reportes y observaciones</p>
         </div>
     </footer>
 

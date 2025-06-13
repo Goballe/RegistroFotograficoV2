@@ -1,0 +1,4 @@
+﻿id,semana_levantamiento,fecha_levantamiento,descripcion,fotografia,tiempo_levantamiento,estado,comentario_revisor,revisado_en,observacion_id,revisor_id
+6,semana1,2025-06-20,aaaaaa,levantamientos/supervision-de-obra-3_UiZiZwu.jpg,"10 days, 0:00:00",Aprobado,reeeeeas,2025-06-13 00:40:18.725583+00:00,18,4
+8,semana 4,2025-06-13,teeeeeeeeeeest,levantamientos/Qué_es_una_bitácora_de_obra_y_cuál_es_su_objetivo.webp,"12 days, 0:00:00",Aprobado,teeeeeesttt 111111111,2025-06-13 02:09:05.263677+00:00,20,4
+9,semana 4,2025-06-27,treassafsdf,levantamientos/obra-civil_MopEmKY.jpg,"26 days, 0:00:00",Aprobado,1231231321321,2025-06-13 03:51:41.082496+00:00,19,4

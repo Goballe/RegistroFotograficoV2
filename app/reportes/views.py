@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 import io
 import tempfile
 from io import BytesIO
-from .pdf_generator_new import ReportePDFGenerator
+from .reporte_pdf_generator import ReportePDFGenerator
 
 
 @login_required
@@ -112,6 +112,11 @@ def editar_reporte(request, reporte_id):
 
 @login_required
 def crear_reporte(request):
+    # Verificar si el usuario tiene permiso para crear reportes
+    if request.user.rol == 'VISOR':
+        messages.error(request, 'No tienes permiso para crear reportes.')
+        return redirect('reportes:dashboard')
+        
     proyecto_id = (
         request.GET.get('proyecto_id')
         or request.GET.get('proyecto')
@@ -146,22 +151,37 @@ def crear_reporte(request):
                 
                 foto_formset = FotoFormSet(request.POST, request.FILES, instance=reporte)
                 if foto_formset.is_valid():
-                    foto_formset.save()
-                    # Redirige a la lista de reportes del proyecto y abre el PDF en nueva ventana
+                    # Guardar el formset
+                    instances = foto_formset.save(commit=False)
+                    for instance in instances:
+                        # Asignar el reporte a cada instancia de foto
+                        instance.reporte = reporte
+                        instance.save()
+                    
+                    # Eliminar las fotos marcadas para borrar
+                    for obj in foto_formset.deleted_objects:
+                        obj.delete()
+                    
+                    # Redirige a la lista de reportes del proyecto con mensaje de éxito
                     request.session['abrir_pdf_id'] = reporte.id
-                    return redirect('reportes:proyecto_detalle', proyecto_id=reporte.proyecto.id)
+                    messages.success(request, f'Reporte {reporte.tipo_formulario} creado exitosamente con {len(instances)} imágenes.')
+                    return redirect('reportes:lista_reportes_fotograficos', proyecto_id=reporte.proyecto.id)
                 else:
                     # Si hay errores en los formularios de fotos, mostrarlos
-                    messages.error(request, 'Por favor corrija los errores en las imágenes.')
+                    for error in foto_formset.errors:
+                        if error:
+                            messages.error(request, f'Error en las imágenes: {error}')
+                            break
         else:
             foto_formset = FotoFormSet(request.POST, request.FILES)
     else:
         proyecto_id = request.GET.get('proyecto_id')
         tipo_formulario = request.GET.get('tipo_formulario')
-        # Solo permitir acceso si es REPORTE FOTOGRÁFICO
-        if tipo_formulario != 'REPORTE FOTOGRÁFICO':
+        # Validar que el tipo de formulario sea uno de los permitidos
+        tipos_permitidos = ['REPORTE FOTOGRÁFICO', 'CONTROL DE OBS CALIDAD', 'OBSERVACIONES', 'CONTROL DE OBS SSOMA']
+        if tipo_formulario not in tipos_permitidos:
             from django.http import Http404
-            raise Http404('Solo se permite crear reportes fotográficos desde aquí.')
+            raise Http404(f'Solo se permite crear reportes de los siguientes tipos: {", ".join(tipos_permitidos)}.')
         if proyecto_instance:
             # Get the next report number
             tipo_formulario = tipo_formulario or 'REPORTE FOTOGRÁFICO'
@@ -265,11 +285,34 @@ def lista_reportes(request):
         'tipo_formulario_actual': tipo_formulario,
     })
 
+@login_required
+def ver_reporte(request, reporte_id):
+    """
+    Vista para mostrar el detalle de un reporte con sus imágenes.
+    """
+    # Obtener el reporte o retornar 404 si no existe o el usuario no tiene acceso
+    reporte = get_object_or_404(ReporteFotografico, id=reporte_id, proyecto__usuarios=request.user)
+    
+    # Obtener las fotos del reporte ordenadas
+    fotos = reporte.fotos.all().order_by('orden')
+    
+    context = {
+        'reporte': reporte,
+        'fotos': fotos,
+        'proyecto': reporte.proyecto,
+    }
+    
+    return render(request, 'reportes/ver_reporte.html', context)
+
+
+@login_required
 def borrar_reporte(request, reporte_id):
     reporte = get_object_or_404(ReporteFotografico, id=reporte_id)
     proyecto_id = reporte.proyecto.id
+    reporte_tipo = reporte.tipo_formulario
     reporte.delete()
-    return redirect('reportes:proyecto_detalle', proyecto_id=proyecto_id)
+    messages.success(request, f'Reporte {reporte_tipo} eliminado exitosamente.')
+    return redirect('reportes:lista_reportes_fotograficos', proyecto_id=proyecto_id)
 
 @login_required
 def perfil_usuario(request):
@@ -343,7 +386,7 @@ def reporte_pdf(request, reporte_id):
                 imagen_path = os.path.join(settings.MEDIA_ROOT, str(foto.imagen))
                 fotos.append({
                     'imagen_path': imagen_path,
-                    'descripcion': foto.descripcion or f'Foto {i}'
+                    'descripcion': foto.descripcion or ''
                 })
         
         # Crear el generador de PDF sin buffer inicial
@@ -384,8 +427,12 @@ def crear_proyecto(request):
                 with transaction.atomic():
                     proyecto = form.save(commit=False)
                     proyecto.save()
+                    
+                    # Asignar automáticamente el acceso al administrador que crea el proyecto
+                    proyecto.usuarios.add(request.user)
+                    
                     form.save_m2m()  # Guardar relaciones many-to-many
-                    messages.success(request, f'Proyecto "{proyecto.nombre}" creado exitosamente.')
+                    messages.success(request, f'Proyecto "{proyecto.nombre}" creado exitosamente. Ahora tienes acceso a este proyecto.')
                     return redirect('reportes:editar_proyecto', proyecto_id=proyecto.id)
             except Exception as e:
                 messages.error(request, f'Error al guardar el proyecto: {str(e)}')
@@ -493,6 +540,8 @@ def eliminar_proyecto(request, proyecto_id):
 def api_reportes_por_tipo(request):
     try:
         print("\n=== Iniciando api_reportes_por_tipo ===")
+        print(f"Método: {request.method}")
+        print(f"Headers: {request.headers}")
         print(f"Usuario: {request.user}")
         print(f"Parámetros GET: {request.GET}")
         
@@ -511,55 +560,40 @@ def api_reportes_por_tipo(request):
                 status=400
             )
             
-        # Buscar el proyecto para verificar permisos
-        from .models import ReporteFotografico, Proyecto
-        try:
-            proyecto = Proyecto.objects.get(id=proyecto_id, usuarios=request.user)
-            print(f"Proyecto encontrado: {proyecto.nombre}")
-        except Proyecto.DoesNotExist:
-            error_msg = 'Proyecto no encontrado o sin permisos'
-            print(f"Error: {error_msg}")
+        # Obtener el proyecto y verificar permisos
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+        if request.user not in proyecto.usuarios.all() and not request.user.is_superuser:
             return JsonResponse(
-                {'error': error_msg}, 
-                status=404
+                {'error': 'No tienes permiso para acceder a este proyecto'}, 
+                status=403
             )
         
-        # Filtrar reportes del tipo y proyecto seleccionados
+        # Obtener los reportes del tipo especificado
         reportes = ReporteFotografico.objects.filter(
             proyecto_id=proyecto_id,
-            tipo_formulario=tipo_formulario
-        ).prefetch_related('fotos').order_by('-fecha_emision')
+            tipo_formulario__iexact=tipo_formulario
+        ).order_by('-fecha_creacion')
         
-        print(f"Total de reportes encontrados: {reportes.count()}")
-        
-        # Preparar datos de respuesta
+        # Formatear los datos para la respuesta
         data = []
-        for r in reportes:
-            try:
-                foto_principal = r.fotos.first()
-                # Construir URLs usando el namespace 'reportes:'
-                url_pdf = reverse('reportes:reporte_pdf', args=[r.id])
-                url_editar = reverse('reportes:editar_reporte', args=[r.id])
-                
-                reporte_data = {
-                    'id': r.id,
-                    'descripcion': r.descripcion or '',
-                    'fecha_emision': r.fecha_emision.strftime('%Y-%m-%d'),
-                    'reporte_numero': r.reporte_numero or '',
-                    'url_pdf': url_pdf,
-                    'url_editar': url_editar,
-                    'tipo_formulario': r.tipo_formulario,
-                    'foto_principal_url': foto_principal.imagen.url if (foto_principal and hasattr(foto_principal, 'imagen')) else None,
-                    'fotos_urls': [foto.imagen.url for foto in r.fotos.all()[:5] if hasattr(foto, 'imagen') and hasattr(foto.imagen, 'url')]
-                }
-                print(f"Reporte {r.id}: {reporte_data}")
-                data.append(reporte_data)
-            except Exception as e:
-                error_msg = f"Error procesando reporte {r.id}: {str(e)}"
-                print(error_msg)
-                import traceback
-                print(traceback.format_exc())
-                continue
+        for reporte in reportes:
+            reporte_data = {
+                'id': reporte.id,
+                'titulo': reporte.titulo or 'Sin título',
+                'fecha_creacion': reporte.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
+                'descripcion': reporte.descripcion or '',
+                'usuario': reporte.usuario.get_full_name() or reporte.usuario.username,
+                'tipo_formulario': reporte.tipo_formulario,
+                'url_editar': reverse('reportes:editar_reporte', args=[reporte.id]),
+                'url_pdf': reverse('reportes:reporte_pdf', args=[reporte.id]),
+            }
+            
+            # Agregar la primera imagen si existe
+            primera_imagen = reporte.fotos.first()
+            if primera_imagen and hasattr(primera_imagen, 'imagen'):
+                reporte_data['imagen_url'] = request.build_absolute_uri(primera_imagen.imagen.url)
+            
+            data.append(reporte_data)
         
         response_data = {
             'status': 'success',
@@ -580,3 +614,79 @@ def api_reportes_por_tipo(request):
             {'error': 'Error interno del servidor', 'details': str(e)}, 
             status=500
         )
+
+
+@login_required
+def lista_reportes_fotograficos(request, proyecto_id):
+    """
+    Vista para mostrar la lista de reportes fotográficos de un proyecto.
+    """
+    # Obtener el proyecto y verificar permisos
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    if request.user not in proyecto.usuarios.all() and not request.user.is_superuser:
+        messages.error(request, 'No tienes permiso para acceder a este proyecto.')
+        return redirect('reportes:dashboard')
+    
+    # Obtener los parámetros de filtrado
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    # Obtener el número de reporte (secuencial) y convertirlo a entero si existe
+    numero_reporte = request.GET.get('numero_reporte')
+    if numero_reporte:
+        try:
+            numero_reporte = int(numero_reporte)
+        except (ValueError, TypeError):
+            numero_reporte = None
+    
+    # Construir la consulta base
+    reportes = ReporteFotografico.objects.filter(
+        proyecto=proyecto,
+        tipo_formulario__iexact='REPORTE FOTOGRÁFICO'
+    )
+    
+    # Aplicar filtros
+    if fecha_desde:
+        reportes = reportes.filter(creado_en__date__gte=fecha_desde)
+    if fecha_hasta:
+        # Añadir 1 día para incluir el día completo de la fecha hasta
+        from datetime import datetime, timedelta
+        fecha_hasta_dt = datetime.strptime(fecha_hasta, '%Y-%m-%d') + timedelta(days=1)
+        reportes = reportes.filter(creado_en__date__lte=fecha_hasta_dt.date())
+        
+    # Convertir el queryset a lista para poder filtrar por posición
+    reportes_lista = list(reportes.order_by('-creado_en'))
+    
+    # Aplicar filtro por número de reporte (secuencial)
+    if numero_reporte and isinstance(numero_reporte, int):
+        if 1 <= numero_reporte <= len(reportes_lista):
+            # Mantener solo el reporte en la posición indicada (restamos 1 porque las listas empiezan en 0)
+            reportes_lista = [reportes_lista[numero_reporte - 1]]
+        else:
+            # Si el número está fuera de rango, devolver lista vacía
+            reportes_lista = []
+    
+    # Convertir de vuelta a queryset para mantener la compatibilidad con el resto del código
+    from django.db.models import Q
+    if reportes_lista:
+        reportes = reportes.filter(id__in=[r.id for r in reportes_lista])
+    else:
+        reportes = reportes.none()
+        
+    # Ordenar por fecha de creación descendente
+    reportes = reportes.order_by('-creado_en')
+    
+    # Agregar la URL de la primera imagen a cada reporte
+    for reporte in reportes:
+        primera_imagen = reporte.fotos.first()
+        if primera_imagen and hasattr(primera_imagen, 'imagen'):
+            reporte.imagen_principal = primera_imagen.imagen
+    
+    context = {
+        'proyecto': proyecto,
+        'reportes': reportes,
+        'filtro_fecha_desde': fecha_desde if fecha_desde else '',
+        'filtro_fecha_hasta': fecha_hasta if fecha_hasta else '',
+        'filtro_numero_reporte': numero_reporte if numero_reporte else '',
+    }
+    
+    return render(request, 'reportes/lista_reportes_fotograficos.html', context)

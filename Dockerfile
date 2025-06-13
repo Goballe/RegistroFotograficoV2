@@ -24,7 +24,8 @@ COPY requirements.txt /code/
 RUN pip install --upgrade pip && \
     pip uninstall -y weasyprint pydyf tinycss2 cssselect2 Pillow Pyphen cffi fonttools html5lib || true && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir "WeasyPrint==60.0" "pydyf>=0.8.0"
+    pip install --no-cache-dir "WeasyPrint==60.0" "pydyf>=0.8.0" && \
+    pip install --no-cache-dir pandas openpyxl
 
 # Copiar el proyecto
 COPY . /code/

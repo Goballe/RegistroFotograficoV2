@@ -1,0 +1,249 @@
+{% extends 'obervaciones/base_observaciones.html' %}
+{% load static %}
+{% load tiempo_filters %}
+{% load widget_tweaks %}
+
+{% block title %}Revisar Levantamiento - {{ proyecto.nombre }}{% endblock %}
+
+{% block contenido_observaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard2-check me-2"></i>Revisar Levantamiento de Observación
+            </h1>
+            {% if observacion.tipo_observacion %}<!-- Es una observación SSOMA -->
+            <a href="{% url 'obervaciones:ver_observacion_ssoma' proyecto_id=proyecto.id pk=observacion.id %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Volver al detalle
+            </a>
+            {% else %}<!-- Es una observación de Calidad -->
+            <a href="{% url 'obervaciones:ver_observacion' proyecto_id=proyecto.id observacion_id=observacion.id %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Volver al detalle
+            </a>
+            {% endif %}
+        </div>
+        <p class="text-muted mb-0">Proyecto: {{ proyecto.nombre }}</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Información de la Observación</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Ítem:</strong> {{ observacion.item }}</p>
+                <p><strong>Fecha:</strong> {{ observacion.fecha|date:"d/m/Y" }}</p>
+                <p><strong>Punto de Inspección:</strong> {{ observacion.get_punto_inspeccion_display }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Nivel de Riesgo:</strong> 
+                    <span class="badge {% if observacion.nivel_riesgo == 'Alto' %}bg-danger
+                                      {% elif observacion.nivel_riesgo == 'Medio' %}bg-warning text-dark
+                                      {% else %}bg-success{% endif %}">
+                        {{ observacion.get_nivel_riesgo_display }}
+                    </span>
+                </p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if observacion.estado == 'Pendiente' %}bg-warning text-dark
+                                      {% elif observacion.estado == 'En Proceso' %}bg-info
+                                      {% elif observacion.estado == 'Atendido' %}bg-primary
+                                      {% else %}bg-success{% endif %}">
+                        {{ observacion.get_estado_display }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>Descripción:</h6>
+            <p class="ms-3">{{ observacion.descripcion|linebreaksbr }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Detalles del Levantamiento</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <p><strong>Fecha de registro:</strong> {{ object.fecha_levantamiento|date:"d/m/Y" }}</p>
+                <p><strong>Semana de levantamiento:</strong> {{ object.semana_levantamiento }}</p>
+                <p><strong>Fecha de levantamiento:</strong> {{ object.fecha_levantamiento|date:"d/m/Y" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Tiempo de levantamiento:</strong> {{ object.tiempo_levantamiento|format_tiempo_levantamiento }}</p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if object.estado == 'Pendiente' %}bg-warning text-dark
+                                      {% elif object.estado == 'Aprobado' %}bg-success
+                                      {% else %}bg-danger{% endif %}">
+                        {{ object.get_estado_display }}
+                    </span>
+                </p>
+                {% if object.revisor %}
+                    <p><strong>Revisado por:</strong> {{ object.revisor.get_full_name|default:object.revisor.username }}</p>
+                    <p><strong>Fecha de revisión:</strong> {{ object.revisado_en|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <h6>Descripción del levantamiento:</h6>
+            <div class="ms-3 p-3 bg-light rounded">
+                {{ object.descripcion|linebreaksbr }}
+            </div>
+        </div>
+        
+        {% if object.fotografia %}
+        <div class="mb-4">
+            <h6>Fotografía del levantamiento:</h6>
+            <div class="text-center">
+                <a href="{{ object.fotografia.url }}" target="_blank">
+                    <img src="{{ object.fotografia.url }}" alt="Fotografía del levantamiento" class="img-fluid rounded" style="max-height: 400px;">
+                </a>
+                <div class="mt-2">
+                    <a href="{{ object.fotografia.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-zoom-in me-1"></i> Ver imagen completa
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if object.comentario_revisor %}
+        <div class="alert {% if object.estado == 'Aprobado' %}alert-success{% else %}alert-warning{% endif %}">
+            <h6><i class="bi bi-chat-square-text me-2"></i>Comentario del revisor:</h6>
+            <p class="mb-0">{{ object.comentario_revisor|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if es_editor %}
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Revisar Levantamiento</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="revisionForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                <label for="{{ form.estado.id_for_label }}" class="form-label">
+                    {{ form.estado.label }}
+                    <span class="text-danger">*</span>
+                </label>
+                <div class="form-control-wrapper">
+                    {{ form.estado|add_class:"form-select" }}
+                </div>
+                <div class="mt-2 form-text">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <span class="badge bg-success">Aprobado</span>: El levantamiento cumple con los requisitos
+                        </div>
+                        <div>
+                            <span class="badge bg-danger">Rechazado</span>: El levantamiento necesita correcciones
+                        </div>
+                    </div>
+                </div>
+                {% if form.estado.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.estado.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.comentario_revisor.id_for_label }}" class="form-label">
+                    {{ form.comentario_revisor.label }}
+                    <span class="text-danger">*</span>
+                </label>
+                {{ form.comentario_revisor|add_class:"form-control"|attr:"rows:4" }}
+                {% if form.comentario_revisor.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.comentario_revisor.errors.0 }}
+                    </div>
+                {% endif %}
+                <div class="mt-2 form-text">
+                    <p class="mb-1"><i class="bi bi-info-circle me-1"></i> Por favor, proporcione comentarios detallados sobre su revisión:</p>
+                    <ul class="mb-0 ps-3">
+                        <li>Si aprueba: Indique los aspectos positivos del levantamiento.</li>
+                        <li>Si rechaza: Explique claramente qué debe corregirse y cómo.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                {% if observacion.tipo_observacion %}<!-- Es una observación SSOMA -->
+                <a href="{% url 'obervaciones:ver_observacion_ssoma' proyecto_id=proyecto.id pk=observacion.id %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                {% else %}<!-- Es una observación de Calidad -->
+                <a href="{% url 'obervaciones:ver_observacion' proyecto_id=proyecto.id observacion_id=observacion.id %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                {% endif %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Guardar Revisión
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar tooltips de Bootstrap
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Cambiar dinámicamente el texto del botón según la acción seleccionada
+        const estadoSelect = document.getElementById('{{ form.estado.id_for_label }}');
+        const submitButton = document.querySelector('#revisionForm button[type="submit"]');
+        
+        if (estadoSelect && submitButton) {
+            function updateButtonText() {
+                const selectedOption = estadoSelect.options[estadoSelect.selectedIndex];
+                const buttonIcon = submitButton.querySelector('i');
+                
+                if (selectedOption.value === 'Aprobado') {
+                    buttonIcon.className = 'bi bi-check-circle me-1';
+                    submitButton.innerHTML = buttonIcon.outerHTML + ' Aprobar Levantamiento';
+                    submitButton.className = 'btn btn-success';
+                } else if (selectedOption.value === 'Rechazado') {
+                    buttonIcon.className = 'bi bi-x-circle me-1';
+                    submitButton.innerHTML = buttonIcon.outerHTML + ' Rechazar Levantamiento';
+                    submitButton.className = 'btn btn-danger';
+                } else {
+                    buttonIcon.className = 'bi bi-save me-1';
+                    submitButton.innerHTML = buttonIcon.outerHTML + ' Guardar Revisión';
+                    submitButton.className = 'btn btn-primary';
+                }
+            }
+            
+            // Ejecutar al cargar y cuando cambie la selección
+            updateButtonText();
+            estadoSelect.addEventListener('change', updateButtonText);
+        }
+    });
+</script>
+{% endblock %}

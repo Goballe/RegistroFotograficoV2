@@ -3,6 +3,7 @@ version: '3.9'
 services:
   db:
     image: postgres:15
+    container_name: postgres_db
     environment:
       POSTGRES_DB: registro_fotografico
       POSTGRES_USER: postgres
@@ -14,11 +15,12 @@ services:
 
   web:
     build: .
+    container_name: django_web
     working_dir: /code/app
-    command: bash -c "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000 --noreload"
     volumes:
       - ./app:/code/app
-      - ./static:/code/staticfilesdocker-compose logs web --tail=100docker-compose logs web --tail=100
+      - ./static:/code/staticfiles
       - ./media:/code/media
     ports:
       - "0.0.0.0:8000:8000"

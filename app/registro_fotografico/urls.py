@@ -30,16 +30,17 @@ def home(request):
 # Configuración de URLs de autenticación
 auth_urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='reportes:login'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='accounts:login'), name='logout'),
     path('perfil/', reportes_views.perfil_usuario, name='perfil_usuario'),
     path('cambiar-contrasena/', reportes_views.cambiar_contrasena, name='cambiar_contrasena'),
 ]
 
 urlpatterns = [
-    path('', home, name='home'),
     path('admin/', admin.site.urls),
-    path('reportes/', include(('reportes.urls', 'reportes'), namespace='reportes')),
-    path('cuenta/', include((auth_urlpatterns, 'reportes'))),
+    path('', home, name='home'),
+    path('reportes/', include('reportes.urls', namespace='reportes')),
+    path('obervaciones/', include('obervaciones.urls', namespace='obervaciones')),  # Corregido el nombre de la ruta
+    path('accounts/', include((auth_urlpatterns, 'accounts'), namespace='accounts')),  # Agregado namespace 'accounts'
 ]
 
 if settings.DEBUG:

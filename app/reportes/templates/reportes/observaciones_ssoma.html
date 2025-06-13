@@ -1,13 +1,150 @@
 {% extends 'base.html' %}
+{% block extra_head %}
+<style>
+    .btn-gradient {
+        background: linear-gradient(135deg, #92263f 0%, #62162c 100%);
+        border: none;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, #a52c48 0%, #721b34 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+    }
+    
+    .card-observacion {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .card-observacion:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-state {
+        padding: 3rem 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .page-title {
+        color: #333;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 0.5rem;
+    }
+    
+    .page-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #92263f, #62162c);
+        border-radius: 3px;
+    }
+    
+    /* Estilo forzado para el banner y sus elementos internos */
+    .banner-nuevo,
+    .banner-nuevo .card-body,
+    .banner-nuevo .row,
+    .banner-nuevo .col-lg-9,
+    .banner-nuevo .col-lg-3 {
+        background: #92263f !important;
+        background-color: #92263f !important;
+        background-image: none !important;
+    }
+    
+    .banner-nuevo {
+        border: none !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        position: relative;
+    }
+    
+    /* Asegurar que el contenido sea visible */
+    .banner-nuevo,
+    .banner-nuevo * {
+        color: white !important;
+    }
+    
+    .banner-nuevo .btn-light {
+        background: rgba(255, 255, 255, 0.9);
+        color: #62162c;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .banner-nuevo .btn-light:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+    
+    .alert-info {
+        background-color: #f0f7ff;
+        border-color: #d0e3ff;
+        color: #0a58ca;
+    }
+    
+    .alert-info .alert-link {
+        color: #084298;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <h2>Control de observaciones de SSOMA</h2>
-    <div class="my-4">
-        <a href="#" class="btn btn-success">Crear nuevo reporte</a>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0 page-title">
+            <i class="bi bi-shield-exclamation me-2"></i>Control de Observaciones SSOMA
+        </h1>
+        {% if request.user.rol != 'VISOR' %}
+        <a href="#" class="btn btn-gradient">
+            <i class="bi bi-plus-lg me-2"></i>Nuevo Reporte
+        </a>
+        {% endif %}
     </div>
-    <div class="card mt-4">
-        <div class="card-body text-center text-muted">
-            Aquí aparecerán los reportes de observaciones SSOMA existentes.
+    
+    <div class="card card-observacion border-0">
+        <div class="card-body p-0">
+            <div class="empty-state text-center p-5">
+                <i class="bi bi-shield-check"></i>
+                <h3 class="h5 mt-3 mb-2">No hay observaciones SSOMA registradas</h3>
+                <p class="text-muted mb-4">Comienza creando tu primer reporte de observación SSOMA.</p>
+                {% if request.user.rol != 'VISOR' %}
+                <a href="#" class="btn btn-gradient">
+                    <i class="bi bi-plus-lg me-2"></i>Crear Primera Observación
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3"></i>
+            <div>
+                <p class="mb-0">¿Necesitas ayuda con las observaciones de SSOMA? <a href="#" class="alert-link">Consulta nuestra guía</a> o contacta al equipo de soporte.</p>
+            </div>
         </div>
     </div>
 </div>

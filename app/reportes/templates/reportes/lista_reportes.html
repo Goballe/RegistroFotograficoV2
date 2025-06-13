@@ -69,7 +69,7 @@
                         <option value="">Todos los tipos</option>
                         {% for tipo in tipos_formulario_unicos %}
                             <option value="{{ tipo }}" {% if tipo == request.GET.tipo_formulario %}selected{% endif %}>
-                                {{ tipo }}
+                                {% if tipo == 'CONTROL DE OBS SSOMA' %}OBSERVACIONES SSOMA{% else %}{{ tipo }}{% endif %}
                             </option>
                         {% endfor %}
                     </select>

@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tabla de Observaciones - {{ proyecto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="alert alert-info">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h5 class="alert-heading">¡Nueva Interfaz de Observaciones Disponible!</h5>
+                <p class="mb-0">Hemos mejorado la interfaz de gestión de observaciones. Te recomendamos utilizar la nueva versión que incluye más funcionalidades y una mejor experiencia de usuario.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="bi bi-table me-2"></i>{{ tipo_formulario|default:"Observaciones" }}
+                </h1>
+                <div>
+                    <a href="{% url 'reportes:proyecto_detalle' proyecto.id %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Volver al proyecto
+                    </a>
+                    <a href="{% url 'obervaciones:lista_observaciones' proyecto.id %}" class="btn btn-primary me-2">
+                        <i class="bi bi-clipboard2-check me-1"></i> Ir a la nueva interfaz
+                    </a>
+                    <button id="btn-recargar" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Recargar datos
+                    </button>
+                </div>
+            </div>
+            <p class="text-muted mb-0">Proyecto: {{ proyecto.nombre }}</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tabla-observaciones" class="table table-striped table-hover mb-0" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr id="tabla-observaciones-cabecera">
+                            <th>Ítem</th>
+                            <th>Sem. Obs</th>
+                            <th>Fecha</th>
+                            <th>Punto de Inspección</th>
+                            <th>Sub Clasificación</th>
+                            <th>Descripción</th>
+                            <th>Nivel de Riesgo</th>
+                            <th>Foto 1</th>
+                            <th>Foto 2</th>
+                            <th>Recomendación</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-observaciones-cuerpo">
+                        <tr>
+                            <td colspan="100%" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mt-2 mb-0">Cargando datos de {{ tipo_formulario|lower }}...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para visualizar fotos -->
+<div class="modal fade" id="modalFoto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Visualizar Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagenModal" src="" class="img-fluid" alt="Imagen de la observación">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a id="descargarImagen" href="#" class="btn btn-primary" download>
+                    <i class="bi bi-download me-1"></i> Descargar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Inicializar el modal de imágenes
+document.addEventListener('DOMContentLoaded', function() {
+    const modalFoto = document.getElementById('modalFoto');
+    if (modalFoto) {
+        modalFoto.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const imagenSrc = button.getAttribute('data-imagen');
+            const modalImg = modalFoto.querySelector('#imagenModal');
+            const downloadLink = modalFoto.querySelector('#descargarImagen');
+            
+            // Establecer la ruta de la imagen (en un entorno real, esto vendría de tu servidor)
+            const rutaBase = '{% static 'img/observaciones/' %}';
+            modalImg.src = rutaBase + imagenSrc;
+            downloadLink.href = rutaBase + imagenSrc;
+            downloadLink.download = imagenSrc;
+        });
+    }
+});
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tablaCuerpo = document.getElementById('tabla-observaciones-cuerpo');
+    const tablaCabecera = document.getElementById('tabla-observaciones-cabecera');
+    const btnRecargar = document.getElementById('btn-recargar');
+    const proyectoId = '{{ proyecto_id }}';
+    const tipoFormulario = '{{ tipo_formulario }}';
+    
+    // Verificar que los elementos existen
+    if (!tablaCuerpo || !tablaCabecera) {
+        console.error('No se encontraron los elementos de la tabla');
+        return;
+    }
+
+    // Función para mostrar un mensaje de error
+    function mostrarError(mensaje) {
+        tablaCuerpo.innerHTML = `
+            <tr>
+                <td colspan="100%" class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill fs-1 d-block mb-2"></i>
+                    <p class="h5">¡Error al cargar los datos!</p>
+                    <p class="text-muted">${mensaje}</p>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarDatos()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+                    </button>
+                </td>
+            </tr>`;
+    }
+
+    // Función para formatear el estado con colores
+    function formatearEstado(estado) {
+        const colores = {
+            'Pendiente': 'bg-warning text-dark',
+            'En Proceso': 'bg-info text-white',
+            'Atendido': 'bg-primary text-white',
+            'Cerrado': 'bg-success text-white'
+        };
+        const color = colores[estado] || 'bg-secondary text-white';
+        return `<span class="badge ${color} rounded-pill">${estado}</span>`;
+    }
+
+    // Función para formatear el nivel de riesgo
+    function formatearRiesgo(nivel) {
+        const colores = {
+            'Alto': 'bg-danger text-white',
+            'Medio': 'bg-warning text-dark',
+            'Bajo': 'bg-success text-white'
+        };
+        const color = colores[nivel] || 'bg-secondary text-white';
+        return `<span class="badge ${color} rounded-pill">${nivel}</span>`;
+    }
+
+    // Función para mostrar miniatura individual de foto
+    function mostrarMiniatura(foto, numero) {
+        if (foto) {
+            return `<a href="#" data-bs-toggle="modal" data-bs-target="#modalFoto" data-imagen="${foto}" class="btn btn-sm btn-outline-secondary w-100">
+                       <i class="bi bi-image"></i> ${numero}
+                    </a>`;
+        }
+        return '-';
+    }
+
+    // Función para cargar los datos
+    function cargarDatos() {
+        // Mostrar estado de carga
+        tablaCuerpo.innerHTML = `
+            <tr>
+                <td colspan="100%" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 mb-0">Cargando datos de ${tipoFormulario}...</p>
+                </td>
+            </tr>`;
+
+        // Deshabilitar el botón de recargar mientras se cargan los datos
+        if (btnRecargar) {
+            btnRecargar.disabled = true;
+            btnRecargar.innerHTML = '<i class="bi bi-hourglass me-1"></i> Cargando...';
+        }
+
+        // Función para manejar errores
+        const manejarError = (error) => {
+            console.error('Error:', error);
+            tablaCuerpo.innerHTML = `
+                <tr>
+                    <td colspan="100%" class="text-center py-4 text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        ${error.message || 'Error al cargar los datos'}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="cargarDatos()">
+                                <i class="bi bi-arrow-repeat"></i> Reintentar
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+        };
+
+        // Función para limpiar y restaurar el botón
+        const limpiarEstado = () => {
+            if (btnRecargar) {
+                btnRecargar.disabled = false;
+                btnRecargar.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Recargar datos';
+            }
+        };
+
+        // Mostrar información de depuración
+        console.log('Realizando petición a /observaciones/get_random_table/');
+        
+        // Realizar la petición a la API
+        fetch(`/observaciones/get_random_table/`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            credentials: 'same-origin'  // Asegurar que se envíen las cookies
+        })
+        .then(response => {
+            console.log('Respuesta recibida:', response);
+            if (!response.ok) {
+                console.error('Error en la respuesta:', response.status, response.statusText);
+                return response.text().then(text => {
+                    console.error('Contenido de la respuesta de error:', text);
+                    throw new Error(`Error HTTP ${response.status}: ${response.statusText}\n${text}`);
+                });
+            }
+            return response.json().then(data => {
+                console.log('Datos JSON recibidos:', data);
+                return data;
+            });
+        })
+        .then(data => {
+            console.log('Datos recibidos para procesar:', data);
+            try {
+                if (data.status === 'success') {
+                    // Limpiar la tabla
+                    const thead = document.querySelector('thead');
+                    if (thead) thead.innerHTML = '';
+                    if (tablaCuerpo) tablaCuerpo.innerHTML = '';
+                    
+                    // Agregar encabezados
+                    if (data.columns && data.columns.length > 0) {
+                        const thead = document.querySelector('thead');
+                        if (!thead) {
+                            console.error('No se encontró el elemento thead');
+                            throw new Error('No se encontró el elemento thead');
+                        }
+                    
+                        thead.innerHTML = '';
+                        const headerRow = document.createElement('tr');
+                        
+                        data.columns.forEach(col => {
+                            const colName = typeof col === 'object' ? (col.title || col.data || '') : col;
+                            const th = document.createElement('th');
+                            th.textContent = colName;
+                            headerRow.appendChild(th);
+                        });
+                        thead.appendChild(headerRow);
+                    }
+
+                    // Agregar datos
+                    console.log('Datos a mostrar:', data.data);
+                    console.log('Columnas:', data.columns);
+                    
+                    if (data.data && data.data.length > 0) {
+                        // Limpiar el cuerpo de la tabla
+                        tablaCuerpo.innerHTML = '';
+                        
+                        // Crear filas con los datos
+                        data.data.forEach(row => {
+                            const tr = document.createElement('tr');
+                            
+                            // Ítem
+                            const tdItem = document.createElement('td');
+                            tdItem.textContent = row['Ítem'] || '-';
+                            tr.appendChild(tdItem);
+                            
+                            // Semana de observación
+                            const tdSemana = document.createElement('td');
+                            tdSemana.textContent = row['Sem de obs'] || '-';
+                            tr.appendChild(tdSemana);
+                            
+                            // Fecha
+                            const tdFecha = document.createElement('td');
+                            tdFecha.textContent = row['Fecha'] || '-';
+                            tr.appendChild(tdFecha);
+                            
+                            // Punto de inspección
+                            const tdPunto = document.createElement('td');
+                            tdPunto.textContent = row['Punto de inspección'] || '-';
+                            tr.appendChild(tdPunto);
+                            
+                            // Sub Clasificación
+                            const tdSubClasif = document.createElement('td');
+                            tdSubClasif.textContent = row['Sub Clasificación'] || '-';
+                            tr.appendChild(tdSubClasif);
+                            
+                            // Descripción
+                            const tdDesc = document.createElement('td');
+                            tdDesc.textContent = row['Descripción de la observación'] || '-';
+                            tr.appendChild(tdDesc);
+                            
+                            // Nivel de riesgo
+                            const tdRiesgo = document.createElement('td');
+                            tdRiesgo.innerHTML = formatearRiesgo(row['Nivel de riesgo']) || '-';
+                            tr.appendChild(tdRiesgo);
+                            
+                            // Foto 1
+                            const tdFoto1 = document.createElement('td');
+                            tdFoto1.innerHTML = mostrarMiniatura(row['Fotografía 01'], 1) || '-';
+                            tr.appendChild(tdFoto1);
+                            
+                            // Foto 2
+                            const tdFoto2 = document.createElement('td');
+                            tdFoto2.innerHTML = mostrarMiniatura(row['Fotografía 02'], 2) || '-';
+                            tr.appendChild(tdFoto2);
+                            
+                            // Acción Correctiva
+                            const tdRecom = document.createElement('td');
+                            tdRecom.textContent = row['Acción Correctiva'] || '-';
+                            tr.appendChild(tdRecom);
+                            
+                            // Estado
+                            const tdEstado = document.createElement('td');
+                            tdEstado.innerHTML = formatearEstado(row['Estado']) || '-';
+                            tr.appendChild(tdEstado);
+                            
+                            tablaCuerpo.appendChild(tr);
+                        });
+                    } else {
+                        tablaCuerpo.innerHTML = `
+                            <tr>
+                                <td colspan="100%" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle-fill fs-1 d-block mb-2"></i>
+                                    <p class="h5">No hay datos disponibles</p>
+                                    <p class="mb-0">No se encontraron registros para mostrar.</p>
+                                </td>
+                            </tr>`;
+                    }
+                } else {
+                    throw new Error(data.message || 'Error desconocido al cargar los datos');
+                }
+            } catch (error) {
+                manejarError(error);
+            }
+        })
+        .catch(error => {
+            manejarError(error);
+        })
+        .finally(() => {
+            limpiarEstado();
+        });
+    }
+
+    // Evento para el botón de recargar
+    if (btnRecargar) {
+        btnRecargar.addEventListener('click', cargarDatos);
+    }
+
+    // Cargar datos al iniciar
+    console.log('Iniciando carga de datos...');
+    console.log('Tabla cuerpo:', tablaCuerpo);
+    console.log('Tabla cabecera:', tablaCabecera);
+    console.log('Botón recargar:', btnRecargar);
+    
+    cargarDatos();
+});
+</script>
+{% endblock %}

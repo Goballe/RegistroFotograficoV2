@@ -1,0 +1,433 @@
+{% extends 'obervaciones/base_observaciones.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - {{ proyecto.nombre }}{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .form-section h5 {
+        color: #495057;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 1.5rem;
+    }
+    #foto1-preview, #foto2-preview {
+        width: 120px !important;
+        height: 90px !important;
+        object-fit: cover !important;
+        margin: 5px 0 !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 0.25rem !important;
+        padding: 0.15rem !important;
+        background-color: #fff !important;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+        max-width: 100% !important;
+        max-height: 90px !important;
+    }
+    .preview-container {
+        display: flex !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+        margin-top: 5px !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    .preview-container img {
+        width: 120px !important;
+        height: 90px !important;
+        object-fit: cover !important;
+    }
+</style>
+{% endblock %}
+
+{% block contenido_observaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'reportes:proyecto_detalle' proyecto.id %}">
+                        {{ proyecto.nombre }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'obervaciones:lista_observaciones_ssoma' proyecto.id %}">
+                        Observaciones SSOMA
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    {{ titulo }}
+                </li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard2-check me-2"></i>{{ titulo }}
+            </h1>
+            <div>
+                <a href="{% url 'obervaciones:lista_observaciones_ssoma' proyecto.id %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <!-- Sección 1: Información Básica -->
+                    <div class="form-section mb-4">
+                        <h5><i class="bi bi-info-circle me-2"></i>Información Básica</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.item.id_for_label }}" class="form-label">
+                                        {{ form.item.label }}
+                                        {% if form.item.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.item }}
+                                    {% if form.item.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.item.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.semana_obs.id_for_label }}" class="form-label">
+                                        {{ form.semana_obs.label }}
+                                        {% if form.semana_obs.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.semana_obs }}
+                                    {% if form.semana_obs.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.semana_obs.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha.id_for_label }}" class="form-label">
+                                        {{ form.fecha.label }}
+                                        {% if form.fecha.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.fecha }}
+                                    {% if form.fecha.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.fecha.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.asignado_a.id_for_label }}" class="form-label">
+                                        {{ form.asignado_a.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.asignado_a }}
+                                    {% if form.asignado_a.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.asignado_a.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Seleccione el usuario responsable de atender la observación.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Sección 2: Detalles de la Observación -->
+                    <div class="form-section mb-4">
+                        <h5><i class="bi bi-clipboard2-pulse me-2"></i>Detalles de la Observación</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.punto_inspeccion.id_for_label }}" class="form-label">
+                                        {{ form.punto_inspeccion.label }}
+                                        {% if form.punto_inspeccion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.punto_inspeccion }}
+                                    {% if form.punto_inspeccion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.punto_inspeccion.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.subclasificacion.id_for_label }}" class="form-label">
+                                        {{ form.subclasificacion.label }}
+                                        {% if form.subclasificacion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.subclasificacion }}
+                                    {% if form.subclasificacion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.subclasificacion.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.tipo_observacion.id_for_label }}" class="form-label">
+                                        {{ form.tipo_observacion.label }}
+                                        {% if form.tipo_observacion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.tipo_observacion }}
+                                    {% if form.tipo_observacion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.tipo_observacion.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.area.id_for_label }}" class="form-label">
+                                        {{ form.area.label }}
+                                        {% if form.area.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.area }}
+                                    {% if form.area.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.area.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                        {{ form.descripcion.label }}
+                                        {% if form.descripcion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.descripcion.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Sección 3: Acciones Correctivas -->
+                    <div class="form-section mb-4">
+                        <h5><i class="bi bi-tools me-2"></i>Acciones Correctivas</h5>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.accion_correctiva.id_for_label }}" class="form-label">
+                                        {{ form.accion_correctiva.label }}
+                                        {% if form.accion_correctiva.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.accion_correctiva }}
+                                    {% if form.accion_correctiva.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.accion_correctiva.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.nivel_riesgo.id_for_label }}" class="form-label">
+                                        {{ form.nivel_riesgo.label }}
+                                        {% if form.nivel_riesgo.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.nivel_riesgo }}
+                                    {% if form.nivel_riesgo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.nivel_riesgo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_compromiso.id_for_label }}" class="form-label">
+                                        {{ form.fecha_compromiso.label }}
+                                        {% if form.fecha_compromiso.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.fecha_compromiso }}
+                                    {% if form.fecha_compromiso.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.fecha_compromiso.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                        {{ form.estado.label }}
+                                        {% if form.estado.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.estado }}
+                                    {% if form.estado.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.estado.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Sección 4: Evidencia Fotográfica -->
+                    <div class="form-section mb-4">
+                        <h5><i class="bi bi-camera me-2"></i>Evidencia Fotográfica</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.foto_1.id_for_label }}" class="form-label">
+                                        {{ form.foto_1.label }}
+                                        {% if form.foto_1.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.foto_1 }}
+                                    {% if form.foto_1.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.foto_1.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div id="foto1-preview-container" class="mt-2"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.foto_2.id_for_label }}" class="form-label">
+                                        {{ form.foto_2.label }}
+                                        {% if form.foto_2.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.foto_2 }}
+                                    {% if form.foto_2.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.foto_2.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <div id="foto2-preview-container" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones del formulario -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% if form.instance.pk %}{% url 'obervaciones:detalle_observacion_ssoma' proyecto.id form.instance.pk %}{% else %}{% url 'obervaciones:lista_observaciones_ssoma' proyecto.id %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Establecer fechas por defecto
+        var fechaFields = document.querySelectorAll('input[type="date"]');
+        fechaFields.forEach(function(field) {
+            if (!field.value) {
+                var today = new Date().toISOString().split('T')[0];
+                field.value = today;
+            }
+        });
+
+        // Función para manejar la vista previa de las fotos
+        function handlePhotoPreview(input, previewId) {
+            const previewContainer = document.getElementById(previewId + '-container');
+            const preview = document.getElementById(previewId);
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    if (!preview) {
+                        const img = document.createElement('img');
+                        img.id = previewId;
+                        img.className = 'img-thumbnail mt-2';
+                        img.alt = 'Vista previa de la imagen';
+                        img.src = e.target.result;
+                        previewContainer.innerHTML = '';
+                        previewContainer.appendChild(img);
+                    } else {
+                        preview.src = e.target.result;
+                    }
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            } else if (preview) {
+                previewContainer.innerHTML = '';
+            }
+        }
+
+        // Configurar los eventos para las entradas de archivo
+        const foto1Input = document.getElementById('{{ form.foto_1.id_for_label }}');
+        const foto2Input = document.getElementById('{{ form.foto_2.id_for_label }}');
+
+        if (foto1Input) {
+            foto1Input.addEventListener('change', function() {
+                handlePhotoPreview(this, 'foto1-preview');
+            });
+        }
+
+        if (foto2Input) {
+            foto2Input.addEventListener('change', function() {
+                handlePhotoPreview(this, 'foto2-preview');
+            });
+        }
+
+        // Validación de formulario
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+
+        // Inicializar datepickers
+        $('.datepicker').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            language: 'es',
+            orientation: 'bottom auto'
+        });
+    });
+</script>
+{% endblock %}

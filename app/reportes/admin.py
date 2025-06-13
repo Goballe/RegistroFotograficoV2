@@ -23,11 +23,12 @@ class UsuarioAdmin(UserAdmin):
 class TipoFormularioProyectoAdmin(admin.ModelAdmin):
     list_display = ("nombre", "proyectos")
     search_fields = ("nombre",)
+    
     def proyectos(self, obj):
         return ", ".join([p.nombre for p in obj.proyecto_set.all()])
     proyectos.short_description = "Proyectos asociados"
 
+admin.site.register(Proyecto, ProyectoAdmin)
 admin.site.register(Usuario, UsuarioAdmin)
 admin.site.register(TipoFormularioProyecto, TipoFormularioProyectoAdmin)
-admin.site.register(Proyecto, ProyectoAdmin)
 # admin.site.unregister(ReporteFotografico)  # No registrar ReporteFotografico para ocultarlo

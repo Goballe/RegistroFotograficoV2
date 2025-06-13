@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reporte Fotográfico - {{ reporte.titulo|default:"Sin título" }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Encabezado con botón de volver -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'reportes:proyecto_detalle' proyecto_id=proyecto.id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al proyecto
+            </a>
+        </div>
+        <div>
+            <a href="{% url 'reportes:reporte_pdf' reporte_id=reporte.id %}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjeta con la información del reporte -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h4 mb-0">
+                <i class="bi bi-file-earmark-text"></i> 
+                {{ reporte.titulo|default:"Reporte Fotográfico" }}
+            </h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Proyecto:</strong> {{ reporte.proyecto.nombre }}</p>
+                    <p><strong>Código:</strong> {{ reporte.codigo_proyecto }}</p>
+                    <p><strong>Cliente:</strong> {{ reporte.cliente }}</p>
+                    <p><strong>Contratista:</strong> {{ reporte.contratista }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>N° de Reporte:</strong> {{ reporte.reporte_numero }}</p>
+                    <p><strong>Fecha de Emisión:</strong> {{ reporte.fecha_emision|date:"d/m/Y" }}</p>
+                    <p><strong>Elaborado por:</strong> {{ reporte.elaborado_por }}</p>
+                    <p><strong>Revisado por:</strong> {{ reporte.revisado_por|default:"-" }}</p>
+                </div>
+            </div>
+            
+            {% if reporte.descripcion %}
+            <div class="mt-4">
+                <h5 class="border-bottom pb-2">Descripción</h5>
+                <p class="mb-0">{{ reporte.descripcion|linebreaksbr }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Galería de imágenes -->
+    {% if fotos %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0"><i class="bi bi-images"></i> Imágenes del Reporte</h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                {% for foto in fotos %}
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100 shadow-sm">
+                        <a href="{{ foto.imagen.url }}" target="_blank" style="text-decoration: none;">
+                            <img src="{{ foto.imagen.url }}" 
+                                 class="card-img-top img-fluid" 
+                                 alt="Imagen {{ forloop.counter }}"
+                                 style="height: 200px; width: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s;">
+                            {% if foto.descripcion %}
+                            <div class="card-body p-3">
+                                <p class="card-text small text-muted mb-0">{{ foto.descripcion|truncatechars:100 }}</p>
+                            </div>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'reportes:proyecto_detalle' proyecto_id=proyecto.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al proyecto
+        </a>
+        <div>
+            {% if request.user.rol in 'ADMIN,EDITOR' or request.user.is_superuser %}
+            <a href="{% url 'reportes:editar_reporte' reporte_id=reporte.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            {% endif %}
+            <a href="{% url 'reportes:reporte_pdf' reporte_id=reporte.id %}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Se ha eliminado el modal ya que ahora las imágenes se abren en una nueva pestaña -->
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* Estilo para el efecto hover en las imágenes */
+    .card img {
+        transition: transform 0.3s ease;
+    }
+    .card:hover img {
+        transform: scale(1.02);
+    }
+    .card a:hover {
+        text-decoration: none;
+    }
+</style>
+{% endblock %}

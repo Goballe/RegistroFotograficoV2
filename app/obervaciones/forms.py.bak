@@ -1,0 +1,346 @@
+from django import forms
+from .models import (
+    ObservacionCalidad, LevantamientoObservacion, PuntoInspeccion, SubClasificacion,
+    ObservacionSeguridadSSOMA, TipoObservacionSSOMA, AreaSSOMA, 
+    PuntoInspeccionSSOMA, SubClasificacionSSOMA
+)
+from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.utils.timezone import now
+from django.core.validators import MinValueValidator
+from datetime import timedelta
+
+
+class ObservacionCalidadForm(forms.ModelForm):
+    """
+    Formulario para crear y editar observaciones de calidad.
+    """
+    class Meta:
+        model = ObservacionCalidad
+        fields = [
+            'item', 'semana_obs', 'fecha', 'punto_inspeccion', 
+            'sub_clasificacion', 'descripcion', 'nivel_riesgo', 
+            'recomendacion', 'estado', 'asignado_a', 'foto_1', 'foto_2'
+        ]
+        widgets = {
+            'fecha': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control',
+                    'value': timezone.now().strftime('%Y-%m-%d')
+                }
+            ),
+            'punto_inspeccion': forms.Select(
+                attrs={
+                    'class': 'form-select',
+                    'required': 'required'
+                },
+                choices=PuntoInspeccion.choices
+            ),
+            'sub_clasificacion': forms.Select(
+                attrs={
+                    'class': 'form-select',
+                    'required': 'required'
+                },
+                choices=SubClasificacion.choices
+            ),
+            'descripcion': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'recomendacion': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'nivel_riesgo': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        proyecto = kwargs.pop('proyecto', None)
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        
+        # Aplicar clases de Bootstrap a todos los campos
+        for field_name, field in self.fields.items():
+            if field_name not in self.Meta.widgets:
+                if field_name in ['foto_1', 'foto_2']:
+                    field.widget.attrs.update({'class': 'form-control'})
+                elif field_name in ['descripcion', 'recomendacion']:
+                    continue  # Ya se configuraron arriba
+                elif field_name == 'asignado_a':
+                    # Solo permitir seleccionar usuarios con rol de visor
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    visores = User.objects.filter(groups__name='visores')
+                    self.fields['asignado_a'].queryset = visores
+                    self.fields['asignado_a'].required = True
+                    self.fields['asignado_a'].widget.attrs.update({'class': 'form-select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+        
+        # Establecer valores iniciales
+        if not self.instance.pk:  # Solo para formularios nuevos
+            if proyecto:
+                self.instance.proyecto = proyecto
+            if usuario:
+                self.instance.creado_por = usuario
+            
+            # Generar el n√∫mero de √≠tem autom√°ticamente
+            if proyecto:
+                ultimo_item = ObservacionCalidad.objects.filter(
+                    proyecto=proyecto
+                ).order_by('-item').first()
+                
+                if ultimo_item and ultimo_item.item.startswith('OB-'):
+                    try:
+                        numero = int(ultimo_item.item.split('-')[1]) + 1
+                        self.initial['item'] = f'OB-{numero:04d}'
+                    except (IndexError, ValueError):
+                        self.initial['item'] = f'OB-{ObservacionCalidad.objects.count() + 1:04d}'
+                else:
+                    self.initial['item'] = 'OB-0001'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validar que al menos una foto est√© presente
+        if not cleaned_data.get('foto_1') and not cleaned_data.get('foto_2'):
+            raise ValidationError('Debe adjuntar al menos una fotograf√≠a.')
+        return cleaned_data
+
+
+class LevantamientoObservacionForm(forms.ModelForm):
+    """
+    Formulario para crear y editar levantamientos de observaciones.
+    """
+    tiempo_levantamiento = forms.CharField(
+        label='D√≠as transcurridos',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'readonly': 'readonly'
+        })
+    )
+    
+    class Meta:
+        model = LevantamientoObservacion
+        fields = [
+            'semana_levantamiento', 'fecha_levantamiento', 
+            'descripcion', 'fotografia', 'tiempo_levantamiento'
+        ]
+        widgets = {
+            'semana_levantamiento': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '52',
+                'value': timezone.now().isocalendar()[1]
+            }),
+            'fecha_levantamiento': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control',
+                    'value': timezone.now().strftime('%Y-%m-%d')
+                }
+            ),
+            'descripcion': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'Describa las acciones realizadas para levantar la observaci√≥n...'
+            }),
+            'fotografia': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            })
+        }
+        labels = {
+            'semana_levantamiento': 'Semana de levantamiento',
+            'fecha_levantamiento': 'Fecha de levantamiento',
+            'descripcion': 'Descripci√≥n del levantamiento',
+            'fotografia': 'Fotograf√≠a'
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_levantamiento = cleaned_data.get('fecha_levantamiento')
+        
+        # Validar que la fecha de levantamiento no sea anterior a la fecha actual
+        if fecha_levantamiento and fecha_levantamiento < timezone.now().date():
+            self.add_error('fecha_levantamiento', 'La fecha de levantamiento no puede ser anterior a la fecha actual.')
+        
+        # Validar que se haya subido una fotograf√≠a
+        if not cleaned_data.get('fotografia') and not self.instance.fotografia:
+            self.add_error('fotografia', 'Debe adjuntar una fotograf√≠a del levantamiento.')
+        
+        return cleaned_data
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si es una instancia existente, mostrar el tiempo transcurrido
+        if self.instance and self.instance.pk and self.instance.tiempo_levantamiento:
+            self.fields['tiempo_levantamiento'].initial = str(self.instance.tiempo_levantamiento)
+
+
+class RevisarLevantamientoForm(forms.ModelForm):
+    """
+    Formulario para que los editores revisen los levantamientos.
+    """
+    class Meta:
+        model = LevantamientoObservacion
+        fields = ['estado', 'comentario_revisor']
+        widgets = {
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'comentario_revisor': forms.Textarea(attrs={
+                'rows': 3, 
+                'class': 'form-control',
+                'placeholder': 'Ingrese sus comentarios sobre el levantamiento...'
+            })
+        }
+
+
+class ObservacionSeguridadSSOMAForm(forms.ModelForm):
+    """
+    Formulario para crear y editar observaciones de seguridad SSOMA, con la misma l√≥gica de validaci√≥n y widgets que el de calidad.
+    """
+    class Meta:
+        model = ObservacionSeguridadSSOMA
+        fields = [
+            'item', 'semana_obs', 'fecha', 'punto_inspeccion', 'subclasificacion',
+            'tipo_observacion', 'area', 'descripcion', 'accion_correctiva',
+            'nivel_riesgo', 'fecha_compromiso', 'estado', 'asignado_a', 'foto_1', 'foto_2'
+        ]
+        widgets = {
+            'fecha': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_compromiso': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
+            'punto_inspeccion': forms.Select(attrs={'class': 'form-select'}),
+            'subclasificacion': forms.Select(attrs={'class': 'form-select'}),
+            'tipo_observacion': forms.Select(attrs={'class': 'form-select'}),
+            'area': forms.Select(attrs={'class': 'form-select'}),
+            'descripcion': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'accion_correctiva': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'nivel_riesgo': forms.Select(attrs={'class': 'form-select'}),
+            'asignado_a': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        proyecto = kwargs.pop('proyecto', None)
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        
+        # Aplicar clases de Bootstrap a todos los campos
+        for field_name, field in self.fields.items():
+            if field_name not in self.Meta.widgets:
+                if field_name in ['foto_1', 'foto_2']:
+                    field.widget.attrs.update({'class': 'form-control'})
+                elif field_name in ['descripcion', 'accion_correctiva']:
+                    continue  # Ya se configuraron arriba
+                elif field_name == 'asignado_a':
+                    # Solo permitir seleccionar usuarios con rol de visor
+                    from django.contrib.auth import get_user_model
+                    from django.contrib.auth.models import Group
+                    User = get_user_model()
+                    try:
+                        grupo_visores = Group.objects.get(name='visores')
+                        visores = User.objects.filter(groups=grupo_visores).order_by('first_name', 'last_name')
+                        self.fields['asignado_a'].queryset = visores
+                    except Group.DoesNotExist:
+                        # Si el grupo no existe, mostrar un queryset vac√≠o
+                        self.fields['asignado_a'].queryset = User.objects.none()
+                    self.fields['asignado_a'].required = True
+                    self.fields['asignado_a'].widget.attrs.update({'class': 'form-select'})
+                else:
+                    field.widget.attrs.update({'class': 'form-control'})
+        
+        # Asignar valores predeterminados a los campos ocultos
+        self.initial['tipo_observacion'] = TipoObservacionSSOMA.CONDICION_INSEGURA
+        self.initial['area'] = AreaSSOMA.OBRA_CIVIL
+
+        # Si es un nuevo formulario, establecer valores iniciales
+        if not self.instance.pk:
+            if proyecto:
+                self.instance.proyecto = proyecto
+                # Generar el n√∫mero de √≠tem autom√°ticamente
+                ultimo_item = ObservacionSeguridadSSOMA.objects.filter(
+                    proyecto=proyecto
+                ).order_by('-item').first()
+                
+                if ultimo_item and ultimo_item.item.startswith('SS-'):
+                    try:
+                        numero = int(ultimo_item.item.split('-')[1]) + 1
+                        self.initial['item'] = f'SS-{numero:04d}'
+                    except (IndexError, ValueError):
+                        self.initial['item'] = f'SS-{ObservacionSeguridadSSOMA.objects.count() + 1:04d}'
+                else:
+                    self.initial['item'] = 'SS-0001'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validar que al menos una foto est√© presente
+        if not cleaned_data.get('foto_1') and not cleaned_data.get('foto_2'):
+            raise ValidationError('Debe adjuntar al menos una fotograf√≠a.')
+        return cleaned_data
+f r o m   d j a n g o   i m p o r t   f o r m s  
+ f r o m   . m o d e l s   i m p o r t   L e v a n t a m i e n t o O b s e r v a c i o n S S O M A  
+ f r o m   d j a n g o . u t i l s   i m p o r t   t i m e z o n e  
+ f r o m   d j a n g o . c o r e . e x c e p t i o n s   i m p o r t   V a l i d a t i o n E r r o r  
+ f r o m   d a t e t i m e   i m p o r t   d a t e t i m e ,   t i m e d e l t a  
+  
+ c l a s s   L e v a n t a m i e n t o O b s e r v a c i o n S S O M A F o r m ( f o r m s . M o d e l F o r m ) :  
+         " " "  
+         F o r m u l a r i o   p a r a   c r e a r   l e v a n t a m i e n t o s   d e   o b s e r v a c i o n e s   S S O M A .  
+         " " "  
+         t i e m p o _ l e v a n t a m i e n t o   =   f o r m s . C h a r F i e l d (  
+                 l a b e l = ' D √ ≠ a s   t r a n s c u r r i d o s ' ,  
+                 r e q u i r e d = F a l s e ,  
+                 w i d g e t = f o r m s . T e x t I n p u t ( a t t r s = {  
+                         ' c l a s s ' :   ' f o r m - c o n t r o l ' ,  
+                         ' r e a d o n l y ' :   ' r e a d o n l y '  
+                 } )  
+         )  
+          
+         c l a s s   M e t a :  
+                 m o d e l   =   L e v a n t a m i e n t o O b s e r v a c i o n S S O M A  
+                 f i e l d s   =   [  
+                         ' s e m a n a _ l e v a n t a m i e n t o ' ,   ' f e c h a _ l e v a n t a m i e n t o ' ,    
+                         ' d e s c r i p c i o n ' ,   ' f o t o g r a f i a ' ,   ' t i e m p o _ l e v a n t a m i e n t o '  
+                 ]  
+                 w i d g e t s   =   {  
+                         ' s e m a n a _ l e v a n t a m i e n t o ' :   f o r m s . T e x t I n p u t ( a t t r s = { ' c l a s s ' :   ' f o r m - c o n t r o l ' } ) ,  
+                         ' f e c h a _ l e v a n t a m i e n t o ' :   f o r m s . D a t e I n p u t (  
+                                 f o r m a t = ' % Y - % m - % d ' ,  
+                                 a t t r s = {  
+                                         ' t y p e ' :   ' d a t e ' ,  
+                                         ' c l a s s ' :   ' f o r m - c o n t r o l ' ,  
+                                         ' v a l u e ' :   t i m e z o n e . n o w ( ) . s t r f t i m e ( ' % Y - % m - % d ' )  
+                                 }  
+                         ) ,  
+                         ' d e s c r i p c i o n ' :   f o r m s . T e x t a r e a ( a t t r s = {  
+                                 ' r o w s ' :   4 ,    
+                                 ' c l a s s ' :   ' f o r m - c o n t r o l ' ,  
+                                 ' p l a c e h o l d e r ' :   ' D e s c r i b a   l a s   a c c i o n e s   r e a l i z a d a s   p a r a   l e v a n t a r   l a   o b s e r v a c i √ ≥ n '  
+                         } ) ,  
+                 }  
+                 l a b e l s   =   {  
+                         ' s e m a n a _ l e v a n t a m i e n t o ' :   ' S e m a n a   d e   l e v a n t a m i e n t o ' ,  
+                         ' f e c h a _ l e v a n t a m i e n t o ' :   ' F e c h a   d e   l e v a n t a m i e n t o ' ,  
+                         ' d e s c r i p c i o n ' :   ' D e s c r i p c i √ ≥ n   d e l   l e v a n t a m i e n t o ' ,  
+                         ' f o t o g r a f i a ' :   ' F o t o g r a f √ ≠ a '  
+                 }  
+          
+         d e f   c l e a n ( s e l f ) :  
+                 c l e a n e d _ d a t a   =   s u p e r ( ) . c l e a n ( )  
+                 #   V a l i d a r   q u e   l a   f e c h a   d e   l e v a n t a m i e n t o   s e a   p o s t e r i o r   a   l a   f e c h a   d e   l a   o b s e r v a c i √ ≥ n  
+                 f e c h a _ l e v a n t a m i e n t o   =   c l e a n e d _ d a t a . g e t ( ' f e c h a _ l e v a n t a m i e n t o ' )  
+                 i f   h a s a t t r ( s e l f ,   ' o b s e r v a c i o n ' )   a n d   s e l f . o b s e r v a c i o n   a n d   f e c h a _ l e v a n t a m i e n t o :  
+                         i f   f e c h a _ l e v a n t a m i e n t o   <   s e l f . o b s e r v a c i o n . f e c h a :  
+                                 s e l f . a d d _ e r r o r ( ' f e c h a _ l e v a n t a m i e n t o ' ,   ' L a   f e c h a   d e   l e v a n t a m i e n t o   d e b e   s e r   p o s t e r i o r   a   l a   f e c h a   d e   l a   o b s e r v a c i √ ≥ n ' )  
+                 r e t u r n   c l e a n e d _ d a t a  
+          
+         d e f   _ _ i n i t _ _ ( s e l f ,   * a r g s ,   * * k w a r g s ) :  
+                 s e l f . o b s e r v a c i o n   =   k w a r g s . p o p ( ' o b s e r v a c i o n ' ,   N o n e )  
+                 s u p e r ( ) . _ _ i n i t _ _ ( * a r g s ,   * * k w a r g s )  
+                  
+                 #   E s t a b l e c e r   l a   s e m a n a   a c t u a l   c o m o   v a l o r   p r e d e t e r m i n a d o  
+                 i f   n o t   s e l f . i n s t a n c e . p k :  
+                         s e l f . i n i t i a l [ ' s e m a n a _ l e v a n t a m i e n t o ' ]   =   f " S { d a t e t i m e . n o w ( ) . i s o c a l e n d a r ( ) [ 1 ] } - { d a t e t i m e . n o w ( ) . y e a r } "  
+                  
+                 #   S i   e s   u n a   e d i c i √ ≥ n ,   m o s t r a r   e l   t i e m p o   d e   l e v a n t a m i e n t o  
+                 i f   s e l f . i n s t a n c e   a n d   s e l f . i n s t a n c e . p k   a n d   s e l f . i n s t a n c e . t i e m p o _ l e v a n t a m i e n t o :  
+                         s e l f . f i e l d s [ ' t i e m p o _ l e v a n t a m i e n t o ' ] . i n i t i a l   =   s t r ( s e l f . i n s t a n c e . t i e m p o _ l e v a n t a m i e n t o )  
+ 

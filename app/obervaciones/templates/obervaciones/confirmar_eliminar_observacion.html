@@ -1,0 +1,96 @@
+{% extends 'obervaciones/base_observaciones.html' %}
+{% load static %}
+
+{% block title %}Eliminar Observación - {{ proyecto.nombre }}{% endblock %}
+
+{% block contenido_observaciones %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-exclamation-circle text-danger" style="font-size: 4rem;"></i>
+                    <h3 class="mt-3">¿Estás seguro de que deseas eliminar esta observación?</h3>
+                    <p class="text-muted">
+                        Esta acción no se puede deshacer. Se eliminarán todos los datos asociados a esta observación, incluyendo las fotografías.
+                    </p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Detalles de la Observación</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Ítem:</dt>
+                            <dd class="col-sm-8">{{ object.item }}</dd>
+                            
+                            <dt class="col-sm-4">Fecha:</dt>
+                            <dd class="col-sm-8">{{ object.fecha|date:"d/m/Y" }}</dd>
+                            
+                            <dt class="col-sm-4">Punto de Inspección:</dt>
+                            <dd class="col-sm-8">{{ object.punto_inspeccion }}</dd>
+                            
+                            <dt class="col-sm-4">Descripción:</dt>
+                            <dd class="col-sm-8">{{ object.descripcion|truncatechars:100 }}</dd>
+                            
+                            <dt class="col-sm-4">Nivel de Riesgo:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge 
+                                    {% if object.nivel_riesgo == 'Alto' %}bg-danger
+                                    {% elif object.nivel_riesgo == 'Medio' %}bg-warning text-dark
+                                    else %}bg-success{% endif %}">
+                                    {{ object.get_nivel_riesgo_display }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge 
+                                    {% if object.estado == 'Pendiente' %}bg-warning text-dark
+                                    {% elif object.estado == 'En Proceso' %}bg-info
+                                    elif object.estado == 'Atendido' %}bg-primary
+                                    else %}bg-success{% endif %}">
+                                    {{ object.get_estado_display }}
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <form method="post" class="text-center">
+                    {% csrf_token %}
+                    <a href="{% url 'obervaciones:lista_observaciones' proyecto.id %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Cancelar y volver al listado
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Sí, eliminar observación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Deshabilitar el doble envío del formulario
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="bi bi-trash me-1"></i> Eliminando...';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

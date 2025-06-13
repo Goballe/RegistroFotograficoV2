@@ -1,0 +1,228 @@
+{% extends 'obervaciones/base_observaciones.html' %}
+{% load static %}
+
+{% block title %}Detalle de Observación - {{ proyecto.nombre }}{% endblock %}
+
+{% block contenido_observaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard2-check me-2"></i>Detalle de Observación
+            </h1>
+            <div>
+                <a href="{% url 'obervaciones:lista_observaciones' proyecto.id %}" 
+                   class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al listado
+                </a>
+                <a href="{% url 'obervaciones:editar_observacion' proyecto.id observacion.id %}" 
+                   class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i> Editar
+                </a>
+            </div>
+        </div>
+        <p class="text-muted mb-0">Proyecto: {{ proyecto.nombre }}</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Información General</h5>
+        {% if tiene_levantamiento %}
+            <span class="badge {% if levantamiento.estado == 'Aprobado' %}bg-success
+                              {% elif levantamiento.estado == 'Rechazado' %}bg-danger
+                              else %}bg-warning text-dark{% endif %}">
+                Levantamiento: {{ levantamiento.get_estado_display }}
+            </span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Ítem:</strong> {{ observacion.item }}</p>
+                <p><strong>Fecha de Observación:</strong> {{ observacion.fecha|date:"d/m/Y" }}</p>
+                <p><strong>Semana de Observación:</strong> {{ observacion.semana_obs }}</p>
+                <p><strong>Punto de Inspección:</strong> {{ observacion.get_punto_inspeccion_display }}</p>
+                <p><strong>Sub Clasificación:</strong> {{ observacion.get_sub_clasificacion_display }}</p>
+                {% if observacion.asignado_a %}
+                    <p><strong>Asignado a:</strong> {{ observacion.asignado_a.get_full_name|default:observacion.asignado_a.username }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <p><strong>Nivel de Riesgo:</strong> 
+                    <span class="badge {% if observacion.nivel_riesgo == 'Alto' %}bg-danger
+                                      {% elif observacion.nivel_riesgo == 'Medio' %}bg-warning text-dark
+                                      {% else %}bg-success{% endif %}">
+                        {{ observacion.get_nivel_riesgo_display }}
+                    </span>
+                </p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if observacion.estado == 'Pendiente' %}bg-warning text-dark
+                                      {% elif observacion.estado == 'En Proceso' %}bg-info
+                                      {% elif observacion.estado == 'Atendido' %}bg-primary
+                                      else %}bg-success{% endif %}">
+                        {{ observacion.get_estado_display }}
+                    </span>
+                </p>
+                <p><strong>Registrado por:</strong> {{ observacion.creado_por.get_full_name|default:observacion.creado_por.username }}</p>
+                <p><strong>Fecha de registro:</strong> {{ observacion.creado_en|date:"d/m/Y H:i" }}</p>
+                {% if observacion.actualizado_en %}
+                <p><strong>Última actualización:</strong> {{ observacion.actualizado_en|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Detalles de la Observación</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <h6>Descripción:</h6>
+            <p class="ms-3">{{ observacion.descripcion|linebreaksbr }}</p>
+        </div>
+        <div>
+            <h6>Recomendación para Levantamiento:</h6>
+            <p class="ms-3">{{ observacion.recomendacion|linebreaksbr }}</p>
+        </div>
+    </div>
+</div>
+
+{% if observacion.foto_1 or observacion.foto_2 or tiene_levantamiento %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Fotografías</h5>
+    </div>
+    {% if tiene_levantamiento and levantamiento.fotografia %}
+    <div class="card-body">
+        <h6>Fotografía del levantamiento:</h6>
+        <div class="text-center">
+            <a href="{{ levantamiento.fotografia.url }}" target="_blank">
+                <img src="{{ levantamiento.fotografia.url }}" alt="Fotografía del levantamiento" class="img-fluid rounded" style="max-height: 300px;">
+            </a>
+            <div class="mt-2">
+                <a href="{{ levantamiento.fotografia.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-zoom-in me-1"></i> Ver imagen completa
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if observacion.foto_1 or observacion.foto_2 %}
+    <div class="card-body border-top">
+        <h6>Fotografías de la observación:</h6>
+        <div class="row">
+            {% if observacion.foto_1 %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <img src="{{ observacion.foto_1.url }}" class="card-img-top" alt="Fotografía 1">
+                    <div class="card-body text-center">
+                        <a href="{{ observacion.foto_1.url }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="bi bi-zoom-in me-1"></i> Ampliar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if observacion.foto_2 %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <img src="{{ observacion.foto_2.url }}" class="card-img-top" alt="Fotografía 2">
+                    <div class="card-body text-center">
+                        <a href="{{ observacion.foto_2.url }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="bi bi-zoom-in me-1"></i> Ampliar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if tiene_levantamiento %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Información del Levantamiento</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if levantamiento.estado == 'Aprobado' %}bg-success
+                                      {% elif levantamiento.estado == 'Rechazado' %}bg-danger
+                                      else %}bg-warning text-dark{% endif %}">
+                        {{ levantamiento.get_estado_display }}
+                    </span>
+                </p>
+                <p><strong>Semana de levantamiento:</strong> {{ levantamiento.semana_levantamiento }}</p>
+                <p><strong>Fecha de levantamiento:</strong> {{ levantamiento.fecha_levantamiento|date:"d/m/Y" }}</p>
+                <p><strong>Tiempo de levantamiento:</strong> {{ levantamiento.tiempo_levantamiento|time:"H:i:s" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Registrado por:</strong> {{ levantamiento.creado_por.get_full_name|default:levantamiento.creado_por.username }}</p>
+                <p><strong>Fecha de registro:</strong> {{ levantamiento.creado_en|date:"d/m/Y H:i" }}</p>
+                {% if levantamiento.actualizado_por %}
+                    <p><strong>Última revisión:</strong> {{ levantamiento.actualizado_en|date:"d/m/Y H:i" }}</p>
+                    <p><strong>Revisado por:</strong> {{ levantamiento.actualizado_por.get_full_name|default:levantamiento.actualizado_por.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <h6>Descripción del levantamiento:</h6>
+            <div class="ms-3 p-3 bg-light rounded">
+                {{ levantamiento.descripcion|linebreaksbr }}
+            </div>
+        </div>
+        
+        {% if levantamiento.comentario_revisor %}
+        <div class="mt-3">
+            <h6>Comentarios del revisor:</h6>
+            <div class="ms-3 p-3 {% if levantamiento.estado == 'Aprobado' %}bg-success-light{% else %}bg-warning-light{% endif %} rounded">
+                {{ levantamiento.comentario_revisor|linebreaksbr }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between">
+    <a href="{% url 'obervaciones:lista_observaciones' proyecto.id %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Volver al listado
+    </a>
+    <div>
+        {% if es_editor %}
+            <a href="{% url 'obervaciones:editar_observacion' proyecto.id observacion.id %}" 
+               class="btn btn-primary me-2">
+                <i class="bi bi-pencil me-1"></i> Editar
+            </a>
+            <a href="{% url 'obervaciones:eliminar_observacion' proyecto.id observacion.id %}" 
+               class="btn btn-danger me-2">
+                <i class="bi bi-trash me-1"></i> Eliminar
+            </a>
+        {% endif %}
+        
+        {% if es_visor and not tiene_levantamiento and request.user == observacion.asignado_a %}
+            <a href="{% url 'obervaciones:crear_levantamiento' proyecto.id observacion.id %}" 
+               class="btn btn-success">
+                <i class="bi bi-clipboard2-check me-1"></i> Registrar Levantamiento
+            </a>
+        {% endif %}
+        
+        {% if tiene_levantamiento and es_editor and levantamiento.estado == 'Pendiente' %}
+            <a href="{% url 'obervaciones:revisar_levantamiento' proyecto.id observacion.id levantamiento.id %}" 
+               class="btn btn-warning">
+                <i class="bi bi-clipboard2-check me-1"></i> Revisar Levantamiento
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

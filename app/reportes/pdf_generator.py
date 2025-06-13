@@ -125,21 +125,29 @@ class ReportePDFGenerator:
         doc.topMargin = 7*cm
         canvas.restoreState()
     
-    def _create_photo_table(self, fotos):
+    def _create_photo_table(self, fotos, start_idx=0, max_photos=None):
         """Crea una tabla con las fotos y sus descripciones"""
         elements = []
+        
+        # Filtrar solo las fotos que existen
+        valid_fotos = []
+        for foto in fotos:
+            img_path = foto['imagen_path'].replace('file://', '')
+            if os.path.exists(img_path):
+                valid_fotos.append(foto)
+        
+        # Si se especifica un máximo de fotos, limitar
+        if max_photos is not None:
+            valid_fotos = valid_fotos[start_idx:start_idx + max_photos]
+        else:
+            valid_fotos = valid_fotos[start_idx:]
         
         # Crear una tabla con 2 columnas
         data = []
         row = []
         
-        for i, foto in enumerate(fotos, 1):
-            # Crear celda con la imagen y su descripción
+        for i, foto in enumerate(valid_fotos, start_idx + 1):
             img_path = foto['imagen_path'].replace('file://', '')
-            
-            # Verificar si la imagen existe
-            if not os.path.exists(img_path):
-                continue
             
             # Crear el contenido de la celda
             cell_content = [
@@ -213,7 +221,7 @@ class ReportePDFGenerator:
             elements.append(Spacer(1, 0.5*cm))  # Espacio antes de la tabla
             elements.append(table)
         
-        return elements
+        return elements, len(valid_fotos)
     
     def _create_image(self, path, width, height):
         """Crea un elemento de imagen con tamaño fijo"""
@@ -225,7 +233,7 @@ class ReportePDFGenerator:
             return XBox(width, height, 'Imagen no disponible')
     
     def generate_pdf(self, reporte, fotos):
-        """Genera el PDF completo"""
+        """Genera el PDF completo con paginación"""
         # Configurar el documento
         doc = SimpleDocTemplate(
             self.buffer,
@@ -236,11 +244,46 @@ class ReportePDFGenerator:
             pagesize=letter
         )
         
+        # Filtrar solo las fotos que existen
+        valid_fotos = []
+        for foto in fotos:
+            img_path = foto['imagen_path'].replace('file://', '')
+            if os.path.exists(img_path):
+                valid_fotos.append(foto)
+        
+        # Calcular cuántas páginas necesitamos (4 fotos por página)
+        fotos_por_pagina = 4
+        total_fotos = len(valid_fotos)
+        total_paginas = (total_fotos + fotos_por_pagina - 1) // fotos_por_pagina
+        
         # Elementos del documento
         elements = []
         
-        # Añadir fotos en una tabla de 2 columnas
-        elements.extend(self._create_photo_table(fotos))
+        # Procesar las fotos por páginas
+        for pagina in range(total_paginas):
+            # Si no es la primera página, agregar un salto de página
+            if pagina > 0:
+                elements.append(PageBreak())
+            
+            # Calcular índices de fotos para esta página
+            inicio = pagina * fotos_por_pagina
+            fin = min(inicio + fotos_por_pagina, total_fotos)
+            
+            # Agregar título de sección con número de página
+            elements.append(Paragraph(
+                f"<b>FOTOGRAFÍAS ({pagina + 1}/{total_paginas})</b>",
+                style=ParagraphStyle(
+                    name=f'SectionTitle_{pagina}',
+                    fontName='Helvetica-Bold',
+                    fontSize=12,
+                    spaceAfter=12,
+                    alignment=1  # Centrado
+                )
+            ))
+            
+            # Agregar fotos de esta página
+            photo_table, _ = self._create_photo_table(valid_fotos, inicio, fin - inicio)
+            elements.extend(photo_table)
         
         # Construir el PDF
         doc.build(

@@ -1,0 +1,3 @@
+﻿id,item,semana_obs,fecha,punto_inspeccion,sub_clasificacion,descripcion,nivel_riesgo,recomendacion,estado,creado_en,actualizado_en,foto_1,foto_2,asignado_a_id,creado_por_id,proyecto_id
+4,CAL-001,05,2025-06-02,Calibración de equipos,Encofrado,teeeeeees,Medio,teeeeeeesaa,Atendido,2025-06-13 02:18:32.890741+00:00,2025-06-13 02:18:32.890751+00:00,observaciones/calidad/supervision-de-obra-3_AqNFlSf.jpg,observaciones/calidad/obra-civil_kclSn2s.jpg,7,,4
+5,CAL-002,05,2025-06-10,Partidas de IIMM,Cerámico y/o Porcelanato,aaaaaaaaaaaa,Alto,aaaaaaa,Atendido,2025-06-13 02:27:23.833665+00:00,2025-06-13 02:27:23.833674+00:00,observaciones/calidad/obra-civil_38086ff.jpg,observaciones/calidad/Qué_es_una_bitácora_de_obra_y_cuál_es_su_objetivo_DUf1oFW.webp,7,,4

@@ -1,0 +1,257 @@
+{% extends 'obervaciones/base_observaciones.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - {{ proyecto.nombre }}{% endblock %}
+
+{% block contenido_observaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard2-check me-2"></i>{{ titulo }}
+            </h1>
+            <a href="{% url 'obervaciones:ver_observacion' proyecto.id observacion.id %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Volver al detalle
+            </a>
+        </div>
+        <p class="text-muted mb-0">Proyecto: {{ proyecto.nombre }}</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Información de la Observación</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Ítem:</strong> {{ observacion.item }}</p>
+                <p><strong>Fecha:</strong> {{ observacion.fecha|date:"d/m/Y" }}</p>
+                <p><strong>Punto de Inspección:</strong> {{ observacion.get_punto_inspeccion_display }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Nivel de Riesgo:</strong> 
+                    <span class="badge {% if observacion.nivel_riesgo == 'Alto' %}bg-danger
+                                      {% elif observacion.nivel_riesgo == 'Medio' %}bg-warning text-dark
+                                      {% else %}bg-success{% endif %}">
+                        {{ observacion.get_nivel_riesgo_display }}
+                    </span>
+                </p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if observacion.estado == 'Pendiente' %}bg-warning text-dark
+                                      {% elif observacion.estado == 'En Proceso' %}bg-info
+                                      {% elif observacion.estado == 'Atendido' %}bg-primary
+                                      else %}bg-success{% endif %}">
+                        {{ observacion.get_estado_display }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>Descripción:</h6>
+            <p class="ms-3">{{ observacion.descripcion|linebreaksbr }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Registrar Levantamiento</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="levantamientoForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.semana_levantamiento.id_for_label }}" class="form-label">
+                            {{ form.semana_levantamiento.label }}
+                            {% if form.semana_levantamiento.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.semana_levantamiento }}
+                        {% if form.semana_levantamiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.semana_levantamiento.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Ejemplo: Semana 24</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.fecha_levantamiento.id_for_label }}" class="form-label">
+                            {{ form.fecha_levantamiento.label }}
+                            {% if form.fecha_levantamiento.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.fecha_levantamiento }}
+                        {% if form.fecha_levantamiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fecha_levantamiento.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-group">
+                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                        {{ form.descripcion.label }}
+                        {% if form.descripcion.field.required %}<span class="text-danger">*</span>{% endif %}
+                    </label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.descripcion.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Describa detalladamente las acciones realizadas para el levantamiento de la observación.</small>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.tiempo_levantamiento.id_for_label }}" class="form-label">
+                            {{ form.tiempo_levantamiento.label }}
+                            {% if form.tiempo_levantamiento.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.tiempo_levantamiento }}
+                        <script>
+                          document.addEventListener('DOMContentLoaded',function(){
+                            const tiempoInput=document.getElementById('id_tiempo_levantamiento');
+                            if(tiempoInput){tiempoInput.setAttribute('readonly','readonly');}
+                          });
+                        </script>
+                        {% if form.tiempo_levantamiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tiempo_levantamiento.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Se calcula automáticamente</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="{{ form.fotografia.id_for_label }}" class="form-label">
+                            {{ form.fotografia.label }}
+                            {% if form.fotografia.field.required %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ form.fotografia }}
+                        <img id="previewImg" src="#" alt="Vista previa" class="img-thumbnail mt-2 d-none" style="max-height:150px;"/>
+                        {% if form.fotografia.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fotografia.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Suba una fotografía que evidencie el levantamiento.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'obervaciones:ver_observacion' proyecto.id observacion.id %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Guardar Levantamiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para calcular los días transcurridos entre dos fechas
+    function calcularDiasTranscurridos() {
+        const fechaObservacion = new Date('{{ fecha_observacion }}');
+        const fechaLevantamientoInput = document.getElementById('id_fecha_levantamiento');
+        const tiempoLevantamientoInput = document.getElementById('id_tiempo_levantamiento');
+        
+        if (fechaLevantamientoInput && fechaLevantamientoInput.value) {
+            const fechaLevantamiento = new Date(fechaLevantamientoInput.value);
+            
+            // Validar que la fecha de levantamiento no sea anterior a la fecha de observación
+            if (fechaLevantamiento < fechaObservacion) {
+                alert('La fecha de levantamiento no puede ser anterior a la fecha de observación.');
+                fechaLevantamientoInput.value = '';
+                if (tiempoLevantamientoInput) {
+                    tiempoLevantamientoInput.value = '';
+                }
+                return;
+            }
+            
+            // Calcular la diferencia en días
+            const diffTime = fechaLevantamiento - fechaObservacion;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Actualizar el campo de tiempo_levantamiento con el formato de días
+            if (tiempoLevantamientoInput) {
+                tiempoLevantamientoInput.value = `${diffDays} días`;
+            }
+        } else if (tiempoLevantamientoInput) {
+            tiempoLevantamientoInput.value = '';
+        }
+    }
+    
+    // Inicializar tooltips de Bootstrap y configurar el datepicker
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Inicializar datepicker para la fecha de levantamiento
+        const fechaLevantamientoInput = document.getElementById('id_fecha_levantamiento');
+        if (fechaLevantamientoInput) {
+            flatpickr(fechaLevantamientoInput, {
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                locale: 'es',
+                minDate: '{{ fecha_observacion }}',
+                onChange: function(selectedDates, dateStr, instance) {
+                    calcularDiasTranscurridos();
+                }
+            });
+            
+            // Calcular días al cargar el formulario si ya hay una fecha seleccionada
+            if (fechaLevantamientoInput.value) {
+                calcularDiasTranscurridos();
+            }
+        }
+    });
+    
+    // Función global para ser llamada desde el atributo onchange del input
+    window.calcularDiasTranscurridos = calcularDiasTranscurridos;
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const fileInput=document.getElementById('id_fotografia');
+  const preview=document.getElementById('previewImg');
+  if(fileInput){
+    fileInput.addEventListener('change',function(e){
+      const file=e.target.files[0];
+      if(file){
+         const reader=new FileReader();
+         reader.onload=function(ev){preview.src=ev.target.result;preview.classList.remove('d-none');}
+         reader.readAsDataURL(file);
+      }else{preview.classList.add('d-none');}
+    });
+  }
+});
+</script>
+{% endblock %}

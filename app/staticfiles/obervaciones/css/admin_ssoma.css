@@ -1,0 +1,90 @@
+/* Estilos para el panel de administración de Observaciones SSOMA */
+
+/* Estilo para los badges de estado */
+.badge {
+    font-size: 85%;
+    padding: 0.35em 0.65em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+/* Colores para los badges de nivel de riesgo */
+.badge.bg-danger { background-color: #dc3545; }
+.badge.bg-warning { background-color: #ffc107; color: #212529; }
+.badge.bg-success { background-color: #198754; }
+.badge.bg-secondary { background-color: #6c757d; }
+
+/* Mejoras en la visualización de imágenes */
+.field-foto_1 img, .field-foto_2 img {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+    background-color: #fff;
+}
+
+/* Estilo para los campos de solo lectura */
+.readonly {
+    background-color: #f8f9fa;
+    padding: 6px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    min-height: 38px;
+}
+
+/* Mejoras en la visualización de los campos de fecha */
+input[type="date"] {
+    padding: 6px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* Estilo para los campos requeridos */
+.required label:after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Mejoras en la visualización de los select */
+select {
+    max-width: 100%;
+}
+
+/* Mejoras en la visualización de los textarea */
+textarea {
+    width: 100%;
+    min-height: 100px;
+}
+
+/* Estilo para los campos de auditoría */
+.field-creado_por, .field-creado_en, 
+.field-actualizado_por, .field-actualizado_en {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* Mejoras en la visualización de los fieldsets */
+fieldset.module {
+    margin-bottom: 20px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+fieldset.module h2 {
+    background: #f5f5f5;
+    padding: 8px 12px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

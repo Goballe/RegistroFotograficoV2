@@ -9,7 +9,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #92263f 0%, #62162c 100%);">
                     <h4 class="mb-0">
                         <i class="fas fa-camera me-2"></i>
                         {% if edit_mode %}Editar{% else %}Nuevo{% endif %} Reporte Fotográfico
@@ -130,34 +130,39 @@
                             </div>
                             
                             {{ foto_formset.management_form }}
-                            <div id="photo-forms">
+                            <div id="photo-forms" class="row g-3">
                                 {% for form in foto_formset %}
-                                <div class="photo-form mb-4 p-3 border rounded">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="photo-upload-area border-2 border-dashed rounded p-4 text-center">
-                                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-2"></i>
-                                                <p class="mb-1">Arrastra una imagen o haz clic para seleccionar</p>
-                                                <p class="small text-muted mb-0">Formatos: JPG, PNG (Máx. 5MB)</p>
-                                                {{ form.imagen|add_class:"d-none" }}
-                                                <img src="#" class="img-thumbnail mt-2 d-none" style="max-height: 200px;">
+                                <div class="photo-form col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100">
+                                        <div class="card-body p-0">
+                                            <div class="photo-upload-area position-relative border-2 border-dashed rounded p-4 text-center h-100 d-flex flex-column justify-content-center" style="min-height: 200px;">
+                                                <div class="upload-content">
+                                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                                    <h6 class="mb-1">Arrastra una imagen</h6>
+                                                    <p class="small text-muted mb-2">o haz clic para seleccionar</p>
+                                                    <p class="small text-muted">Formatos: JPG, PNG (Máx. 5MB)</p>
+                                                </div>
+                                                {{ form.imagen|add_class:"d-none file-input" }}
+                                                <div class="preview-container d-none">
+                                                    <img src="#" class="img-fluid rounded preview-image" style="max-height: 150px; width: 100%; object-fit: contain;">
+                                                </div>
                                             </div>
                                             {% if form.instance.imagen %}
-                                            <div class="mt-2">
+                                            <div class="current-image p-2 border-top">
                                                 <small class="text-muted">Imagen actual:</small>
-                                                <a href="{{ form.instance.imagen.url }}" target="_blank" class="d-block">
-                                                    {{ form.instance.imagen.name|slice:'::' }}
+                                                <a href="{{ form.instance.imagen.url }}" target="_blank" class="d-block text-truncate" title="{{ form.instance.imagen.name }}">
+                                                    <i class="far fa-image me-1"></i>{{ form.instance.imagen.name|slice:":30" }}...
                                                 </a>
                                             </div>
                                             {% endif %}
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
-                                                {{ form.descripcion|add_class:"form-control"|attr:"placeholder:Describa la fotografía..." }}
+                                        <div class="card-footer bg-transparent">
+                                            <div class="mb-2">
+                                                <label for="{{ form.descripcion.id_for_label }}" class="form-label small mb-1">Descripción</label>
+                                                {{ form.descripcion|add_class:"form-control form-control-sm"|attr:"placeholder:Describa la fotografía..." }}
                                             </div>
-                                            <button type="button" class="btn btn-danger btn-sm remove-photo">
-                                                <i class="fas fa-trash me-1"></i> Eliminar
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-photo">
+                                                <i class="fas fa-trash-alt me-1"></i> Eliminar
                                             </button>
                                         </div>
                                     </div>
@@ -188,17 +193,35 @@
 
 <!-- Plantilla para nuevos formularios de fotos -->
 <template id="photo-form-template">
-    <div class="photo-form mb-4 p-3 border rounded">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="photo-upload-area border-2 border-dashed rounded p-4 text-center">
-                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-2"></i>
-                    <p class="mb-1">Arrastra una imagen o haz clic para seleccionar</p>
-                    <p class="small text-muted mb-0">Formatos: JPG, PNG (Máx. 5MB)</p>
-                    {{ foto_formset.empty_form.imagen|add_class:"d-none" }}
-                    <img src="#" class="img-thumbnail mt-2 d-none" style="max-height: 200px;">
+    <div class="photo-form col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body p-0">
+                <div class="photo-upload-area position-relative border-2 border-dashed rounded p-4 text-center h-100 d-flex flex-column justify-content-center" style="min-height: 200px;">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                        <h6 class="mb-1">Arrastra una imagen</h6>
+                        <p class="small text-muted mb-2">o haz clic para seleccionar</p>
+                        <p class="small text-muted">Formatos: JPG, PNG (Máx. 5MB)</p>
+                    </div>
+                    {{ foto_formset.empty_form.imagen|add_class:"d-none file-input" }}
+                    <div class="preview-container d-none">
+                        <img src="#" class="img-fluid rounded preview-image" style="max-height: 150px; width: 100%; object-fit: contain;">
+                    </div>
                 </div>
             </div>
+            <div class="card-footer bg-transparent">
+                <div class="mb-2">
+                    <label for="{{ foto_formset.empty_form.descripcion.id_for_label }}" class="form-label small mb-1">Descripción</label>
+                    {{ foto_formset.empty_form.descripcion|add_class:"form-control form-control-sm"|attr:"placeholder:Describa la fotografía..." }}
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-photo">
+                    <i class="fas fa-trash-alt me-1"></i> Eliminar
+                </button>
+            </div>
+        </div>
+        {{ foto_formset.empty_form.id }}
+        {{ foto_formset.empty_form.DELETE|add_class:"d-none" }}
+    </div>
             <div class="col-md-6">
                 <div class="mb-3">
                     <label for="{{ foto_formset.empty_form.descripcion.id_for_label }}" class="form-label">Descripción</label>
@@ -215,157 +238,317 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables globales
-    const addPhotoBtn = document.getElementById('add-photo');
-    const photoForms = document.getElementById('photo-forms');
-    const template = document.getElementById('photo-form-template');
-    const totalForms = document.getElementById('id_fotos-TOTAL_FORMS');
-    let formCount = parseInt(totalForms.value);
-    
-    // Función para inicializar eventos de subida de imágenes
-    function initImageUpload(container) {
-        const uploadArea = container.querySelector('.photo-upload-area');
-        const fileInput = container.querySelector('input[type="file"]');
-        const preview = container.querySelector('img');
-        
-        // Click en el área de subida
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        // Arrastrar y soltar
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('border-primary');
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('border-primary');
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('border-primary');
-            
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                updatePreview(fileInput, preview, uploadArea);
-            }
-        });
-        
-        // Cambio en el input de archivo
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length) {
-                updatePreview(fileInput, preview, uploadArea);
-            }
-        });
+<style>
+    .photo-upload-area {
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border-color: #dee2e6 !important;
     }
     
-    // Actualizar vista previa de la imagen
-    function updatePreview(fileInput, preview, uploadArea) {
-        const file = fileInput.files[0];
-        const validTypes = ['image/jpeg', 'image/png'];
+    .photo-upload-area:hover {
+        border-color: #6c757d !important;
+        background-color: #f1f1f1;
+    }
+    
+    .photo-upload-area.drag-over {
+        background-color: #e9ecef;
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    .remove-photo {
+        transition: all 0.2s ease;
+    }
+    
+    .remove-photo:hover {
+        transform: translateY(-1px);
+    }
+    
+    .current-image {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+
+<script>
+    // Función para validar archivos
+    function validateFile(file) {
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
         const maxSize = 5 * 1024 * 1024; // 5MB
         
-        // Validar tipo de archivo
         if (!validTypes.includes(file.type)) {
-            alert('Por favor, seleccione un archivo de imagen válido (JPEG o PNG).');
-            fileInput.value = '';
-            return;
+            showToast('Solo se permiten archivos JPG o PNG', 'warning');
+            return false;
         }
         
-        // Validar tamaño del archivo
         if (file.size > maxSize) {
-            alert('El archivo es demasiado grande. El tamaño máximo permitido es 5MB.');
-            fileInput.value = '';
-            return;
+            showToast('El archivo es demasiado grande. Máximo 5MB', 'warning');
+            return false;
         }
         
-        // Mostrar vista previa
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.src = e.target.result;
-            preview.classList.remove('d-none');
-            uploadArea.querySelector('i').classList.add('d-none');
-            uploadArea.querySelector('p').classList.add('d-none');
-        };
-        reader.readAsDataURL(file);
+        return true;
     }
     
-    // Agregar nuevo formulario de foto
-    addPhotoBtn.addEventListener('click', () => {
-        const newForm = template.content.cloneNode(true);
-        const newFormElement = newForm.firstElementChild;
-        
-        // Actualizar índices del formulario
-        const formRegex = /fotos-(\d{1,})-/g;
-        const replacement = `fotos-${formCount}-`;
-        
-        if (newFormElement.innerHTML) {
-            newFormElement.innerHTML = newFormElement.innerHTML
-                .replace(formRegex, replacement);
-        }
-        
-        // Agregar el nuevo formulario al contenedor
-        photoForms.appendChild(newFormElement);
-        
-        // Inicializar eventos para el nuevo formulario
-        initImageUpload(newFormElement);
-        
-        // Actualizar contador de formularios
-        formCount++;
-        totalForms.value = formCount;
-    });
+    // Función para mostrar notificaciones
+    function showToast(message, type = 'info') {
+        // Implementación simple de notificación
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
     
-    // Eliminar formulario de foto
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.remove-photo')) {
-            const formToRemove = e.target.closest('.photo-form');
-            const deleteInput = formToRemove.querySelector('input[name$="-DELETE"]');
+    document.addEventListener('DOMContentLoaded', function() {
+        const addPhotoBtn = document.getElementById('add-photo');
+        const photoForms = document.getElementById('photo-forms');
+        const template = document.getElementById('photo-form-template');
+        const totalForms = document.getElementById('id_fotos-TOTAL_FORMS');
+        let formCount = document.querySelectorAll('.photo-form').length;
+        const maxFiles = 20; // Límite máximo de imágenes
+        
+        // Inicializar eventos de arrastrar y soltar
+        function initImageUpload(container) {
+            const uploadArea = container.querySelector('.photo-upload-area');
+            const fileInput = container.querySelector('input[type="file"]');
+            const previewContainer = container.querySelector('.preview-container');
+            const preview = container.querySelector('.preview-image');
+            const uploadContent = container.querySelector('.upload-content');
             
-            if (deleteInput) {
-                // Si es un formulario existente, marcarlo para eliminación
-                deleteInput.value = 'on';
-                formToRemove.style.display = 'none';
-            } else {
-                // Si es un nuevo formulario, eliminarlo directamente
-                formToRemove.remove();
-                // Actualizar índices de los formularios restantes
-                updateFormIndices();
+            // Prevenir el comportamiento por defecto para los eventos de arrastrar
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // Resaltar el área de soltado
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => highlight(uploadArea), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => unhighlight(uploadArea), false);
+            });
+            
+            // Manejar la caída de archivos
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            // Click en el área de carga
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            // Cambio en la selección de archivo
+            fileInput.addEventListener('change', () => updatePreview(fileInput, preview, uploadArea, previewContainer, uploadContent));
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            function highlight(element) {
+                element.classList.add('drag-over');
+            }
+            
+            function unhighlight(element) {
+                element.classList.remove('drag-over');
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    if (validateFile(files[0])) {
+                        fileInput.files = files;
+                        updatePreview(fileInput, preview, uploadArea, previewContainer, uploadContent);
+                    }
+                }
             }
         }
-    });
-    
-    // Actualizar índices de los formularios
-    function updateFormIndices() {
-        const forms = photoForms.querySelectorAll('.photo-form:not([style*="display: none"])');
-        let index = 0;
         
-        forms.forEach((form, i) => {
-            Array.from(form.elements).forEach(input => {
-                if (input.name) {
-                    input.name = input.name.replace(/fotos-\d+-/, `fotos-${i}-`);
-                    input.id = input.id.replace(/id_fotos-\d+-/, `id_fotos-${i}-`);
-                }
-            });
-            index = i;
+        // Agregar nuevo formulario de foto
+        addPhotoBtn.addEventListener('click', () => {
+            // Verificar el límite de archivos
+            if (formCount >= maxFiles) {
+                showToast(`No se pueden agregar más de ${maxFiles} imágenes.`, 'warning');
+                return;
+            }
+            
+            const newForm = template.content.cloneNode(true);
+            const newFormElement = newForm.firstElementChild;
+            
+            // Actualizar índices del formulario
+            const formRegex = /fotos-(\d{1,})-/g;
+            const replacement = `fotos-${formCount}-`;
+            
+            if (newFormElement.innerHTML) {
+                newFormElement.innerHTML = newFormElement.innerHTML
+                    .replace(formRegex, replacement);
+            }
+            
+            // Agregar el nuevo formulario al contenedor
+            photoForms.appendChild(newFormElement);
+            
+            // Inicializar eventos para el nuevo formulario
+            initImageUpload(newFormElement);
+            
+            // Actualizar contador de formularios
+            formCount++;
+            totalForms.value = formCount;
         });
         
-        totalForms.value = index + 1;
-    }
-    
-    // Inicializar eventos para los formularios existentes
-    document.querySelectorAll('.photo-form').forEach(form => {
-        initImageUpload(form);
+        // Eliminar formulario de foto
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-photo')) {
+                const formToRemove = e.target.closest('.photo-form');
+                const deleteInput = formToRemove.querySelector('input[name$="-DELETE"]');
+                
+                if (deleteInput) {
+                    // Si es un formulario existente, marcarlo para eliminación
+                    deleteInput.value = 'on';
+                    formToRemove.style.display = 'none';
+                } else {
+                    // Si es un nuevo formulario, eliminarlo directamente
+                    formToRemove.remove();
+                    // Actualizar índices de los formularios restantes
+                    updateFormIndices();
+                }
+            }
+        });
+        
+        // Actualizar índices de los formularios
+        function updateFormIndices() {
+            const forms = photoForms.querySelectorAll('.photo-form:not([style*="display: none"])');
+            let index = 0;
+            
+            forms.forEach((form, i) => {
+                Array.from(form.elements).forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/fotos-\d+-/, `fotos-${i}-`);
+                        input.id = input.id.replace(/id_fotos-\d+-/, `id_fotos-${i}-`);
+                    }
+                });
+                index = i;
+            });
+            
+            totalForms.value = index + 1;
+        }
+        
+        // Inicializar eventos para los formularios existentes
+        document.querySelectorAll('.photo-form').forEach(form => {
+            const uploadArea = form.querySelector('.photo-upload-area');
+            const fileInput = form.querySelector('.file-input');
+            const previewContainer = form.querySelector('.preview-container');
+            const uploadContent = form.querySelector('.upload-content');
+            const currentImage = form.querySelector('a[target="_blank"]');
+            
+            // Si hay una imagen existente, mostrarla
+            if (currentImage) {
+                const imgSrc = currentImage.getAttribute('href');
+                const img = new Image();
+                img.onload = function() {
+                    if (previewContainer) {
+                        const previewImg = previewContainer.querySelector('img');
+                        if (previewImg) {
+                            previewImg.src = imgSrc;
+                            previewContainer.classList.remove('d-none');
+                            if (uploadContent) uploadContent.classList.add('d-none');
+                        }
+                    }
+                };
+                img.src = imgSrc;
+            }
+            
+            // Inicializar eventos de arrastrar y soltar
+            if (uploadArea) {
+                initImageUpload(form);
+                
+                // Si ya hay una imagen cargada, mostrar la vista previa
+                if (fileInput.files && fileInput.files[0]) {
+                    const preview = form.querySelector('.preview-image');
+                    updatePreview(fileInput, preview, uploadArea, previewContainer, uploadContent);
+                }
+            }
+        });
+        
+        // Función para actualizar la vista previa de la imagen
+        function updatePreview(fileInput, preview, uploadArea, previewContainer, uploadContent) {
+            console.log('Actualizando vista previa...');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                console.log('Archivo seleccionado:', file.name, file.type, file.size);
+                
+                if (!validateFile(file)) {
+                    console.log('Validación fallida');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    console.log('Imagen cargada, mostrando vista previa');
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    if (uploadContent) {
+                        uploadContent.classList.add('d-none');
+                    }
+                    if (previewContainer) {
+                        previewContainer.classList.remove('d-none');
+                    }
+                    if (uploadArea) {
+                        uploadArea.style.border = '2px dashed #ccc';
+                    }
+                };
+                
+                reader.onerror = function(error) {
+                    console.error('Error al cargar la imagen:', error);
+                    showToast('Error al cargar la imagen', 'danger');
+                    if (uploadContent) {
+                        uploadContent.classList.remove('d-none');
+                    }
+                    if (previewContainer) {
+                        previewContainer.classList.add('d-none');
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                console.log('No hay archivo seleccionado');
+                if (preview) {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                }
+                if (uploadContent) {
+                    uploadContent.classList.remove('d-none');
+                }
+                if (previewContainer) {
+                    previewContainer.classList.add('d-none');
+                }
+                if (uploadArea) {
+                    uploadArea.style.border = '2px dashed #ccc';
+                }
+            }
+        }
+        
+        // Inicializar eventos de arrastrar y soltar para formularios existentes
+        document.querySelectorAll('.photo-form').forEach(form => {
+            initImageUpload(form);
+        });
+        
+        // Asegurarse de que el campo version_reporte sea editable
+        const versionInput = document.getElementById('version_reporte_input');
+        if (versionInput) {
+            versionInput.removeAttribute('readonly');
+            versionInput.removeAttribute('disabled');
+            versionInput.classList.add('form-control');
+        }
     });
-    
-    // Asegurarse de que el campo version_reporte sea editable
-    const versionInput = document.getElementById('version_reporte_input');
-    if (versionInput) {
-        versionInput.removeAttribute('readonly');
-        versionInput.removeAttribute('disabled');
-        versionInput.classList.add('form-control');
-    }
-});
+</script>
 </script>
 {% endblock %}

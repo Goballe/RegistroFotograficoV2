@@ -1,0 +1,8 @@
+﻿id,password,last_login,is_superuser,username,first_name,last_name,email,is_staff,is_active,date_joined,rol,telefono,direccion
+1,pbkdf2_sha256$600000$k9q6UTUj3ubOxkkWfIzA6g$HvPOYEmQLW8+busWsb6UwPp6SatpLM37GJo/mLB3DOI=,2025-05-30 21:51:23.658251+00:00,True,admin,,,admin.sistemas@jlvconsultores.com,True,True,2025-05-22 00:20:58+00:00,ADMIN,,
+8,pbkdf2_sha256$600000$rKyGVkmWAoH5kONRsidSDS$jWjY7vIlxFFq05HrGR5whGOp4DgF93yl31ApW6B06gU=,2025-05-26 22:36:40+00:00,False,jyauli,Juan,Paul Yauli Mendez,jyauli@jlvconsultores.com,False,True,2025-05-26 22:36:39+00:00,EDITOR,,
+9,pbkdf2_sha256$600000$neLsdolD9nSbQ2m2MSRAxR$z2FfF2Iz/c73+s1zxIO/2ZfL1uxk8moJK8HUtT4NlyY=,2025-06-02 15:09:44.843581+00:00,True,zguerra,Zayda,Guerra,zguerra@jlvconsultores.com,True,True,2025-05-30 21:45:15+00:00,ADMIN,,
+6,pbkdf2_sha256$600000$rTTpMb5j0aEwkMtS3zTBFC$aNvmQ7HFhtTs4E4izW/N8ug01NxZ8YEYWH0S+nlsB10=,2025-05-22 21:48:24+00:00,True,Owen,Owen,Derllie Mondragón Vizcarra,omondragon@jlvconsultores.com,True,True,2025-05-22 21:48:23+00:00,ADMIN,,
+4,pbkdf2_sha256$600000$kR7UXdcP3M6gK7TTWJQF4o$Um2opDZHhBX8NmKDqfGvpnYQqsb46NeDcU/sHjbu7eI=,2025-06-12 16:40:31.957413+00:00,True,goballe,Giovany,Oballe,goballe@jlvconsultores.com,True,True,2025-05-22 14:35:47+00:00,ADMIN,,
+7,pbkdf2_sha256$600000$DEyimv0yX3BW8XWx4XW4MF$R7H6th6TQACq4KUpdttTRNbrhS7SdU9vzjvlET8MOxw=,2025-06-12 21:03:53.000819+00:00,False,contratista,Contratista,Test,,False,True,2025-05-24 20:46:43+00:00,VISOR,,
+5,pbkdf2_sha256$600000$O9wFnX58DKHzqIkzp5o3Pi$BoxSkzIirABvM9ns+B2nj/unxMcf4wDRj1lTWjifrCY=,2025-05-30 19:14:08.635053+00:00,True,drivera,Daniela,Rivera,drivera@jlvconsultores.com,True,True,2025-05-22 21:12:45+00:00,ADMIN,,

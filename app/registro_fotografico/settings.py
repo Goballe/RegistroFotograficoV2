@@ -26,35 +26,40 @@ SECRET_KEY = 'django-insecure-!b6eqfy7z$d^tnvom&=7@a3_c!s*^xcvr9obm@m-(j%r9q#m02
 DEBUG = True
 
 # Permitir todas las conexiones (solo para desarrollo)
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '172.16.20.50']
 
 # Configuración CSRF para desarrollo
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://172.16.20.50:8000',
+    'http://0.0.0.0:8000'
+]
 
 # Obtener automáticamente la IP local
 import socket
 try:
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     for ip in ips:
-        CSRF_TRUSTED_ORIGINS.append(f'http://{ip}:8000')
-    # Agregar también la IP 172.16.20.50
-    CSRF_TRUSTED_ORIGINS.append('http://172.16.20.50:8000')
-except:
-    pass
+        if ip not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(f'http://{ip}:8000')
+except Exception as e:
+    print(f"Error al obtener IPs locales: {e}")
 
 
 # Application definition
 
 AUTH_USER_MODEL = 'reportes.Usuario'
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login'
-
 # Configuración de autenticación personalizada
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# Configuración de autenticación
+LOGIN_URL = 'accounts:login'  # Usando el namespace 'accounts' definido en las URLs
+LOGIN_REDIRECT_URL = 'home'  # Redirigir al dashboard después del login
+LOGOUT_REDIRECT_URL = 'accounts:login'  # Redirigir al login después del logout
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -68,6 +73,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
+    'obervaciones',
 ]
 
 MIDDLEWARE = [
@@ -82,10 +88,14 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'registro_fotografico.urls'
 
+# Configuración de plantillas
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'reportes/templates'],
+        'DIRS': [
+            str(BASE_DIR / 'templates'),
+            str(BASE_DIR / 'reportes/templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -93,6 +103,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'obervaciones.context_processors.notificaciones',
             ],
         },
     },
@@ -135,35 +146,34 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Archivos estáticos (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.2/howto/static-files/
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Archivos de medios subidos por el usuario
+MEDIA_URL = '/media/'
+MEDIA_ROOT = str(BASE_DIR / 'media')
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-pe'  # Cambiado a español de Perú
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Lima'  # Cambiado a la zona horaria de Lima
 
 USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# Login/Logout URLs
-LOGIN_URL = '/cuenta/login/'
+# Login/Logout URLs - Usando el namespace 'accounts' definido en las URLs
+LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = '/cuenta/login/'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
@@ -179,3 +189,35 @@ MESSAGE_TAGS = {
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuración de archivos estáticos (ya definida arriba)
+
+# Configuración de correo electrónico
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # O tu servidor SMTP
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'tu_correo@gmail.com'  # Configurar en producción
+EMAIL_HOST_PASSWORD = 'tu_contraseña'  # Configurar en producción
+DEFAULT_FROM_EMAIL = 'noreply@tudominio.com'  # Configurar en producción
+
+# En desarrollo, puedes usar el backend de consola para probar
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Configuración del sitio
+SITE_URL = 'http://localhost:8000'  # Cambiar en producción
+
+# Configuración de base de datos
+import os
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'registro_fotografico'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),  # Nombre del servicio en docker-compose
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    }
+}

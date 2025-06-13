@@ -16,9 +16,11 @@
                     <a href="{% url 'lista_reportes' %}" class="btn btn-primary btn-lg px-4 gap-3">
                         Ver Reportes
                     </a>
+                    {% if user.rol != 'VISOR' %}
                     <a href="{% url 'crear_reporte' %}" class="btn btn-outline-secondary btn-lg px-4">
                         Crear Nuevo Reporte
                     </a>
+                    {% endif %}
                 </div>
             {% else %}
                 <p class="lead mb-4">
