@@ -1,64 +1,275 @@
-from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
-from django.template.loader import render_to_string, get_template
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth import login, authenticate, update_session_auth_hash
-from django.contrib.auth.forms import PasswordChangeForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 from django.contrib import messages
-from django.utils import timezone
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.urls import reverse
+from django.http import JsonResponse
+import json
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.conf import settings
-from django.utils.translation import gettext_lazy as _, activate, get_language, gettext
 from django.utils import translation
+from django.utils.translation import gettext_lazy as _, activate, get_language, gettext
 from django.db import transaction
+from django.utils import timezone
 from django.urls import reverse_lazy
-from .models import ReporteFotografico, FotoReporte, Usuario
-from .forms import ReporteForm, RegistroUsuarioForm, FotoFormSet, PerfilUsuarioForm, CambiarContrasenaForm
-from xhtml2pdf import pisa
 from django.template.loader import get_template
-from django.template import Context
-from django.http import HttpResponse
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from django.conf import settings
+from .models import Proyecto, ReporteFotografico, FotoReporte, Usuario, TipoFormularioProyecto
+from .forms import ReporteForm, RegistroUsuarioForm, FotoFormSet, PerfilUsuarioForm, CambiarContrasenaForm, ProyectoForm
+from weasyprint import HTML
 import os
 from urllib.parse import urlparse
 import io
 import tempfile
+from io import BytesIO
+from .pdf_generator_new import ReportePDFGenerator
+
+
+@login_required
+def dashboard(request):
+    if request.user.rol == Usuario.Rol.ADMIN or request.user.is_superuser:
+        proyectos = Proyecto.objects.all()
+    else:
+        proyectos = Proyecto.objects.filter(usuarios=request.user)
+    return render(request, 'reportes/dashboard.html', {'proyectos': proyectos})
+
+
+from django.core.paginator import Paginator
+from django.db.models import Q
+
+@login_required
+def proyecto_detalle(request, proyecto_id):
+    # Obtener el proyecto o retornar 404 si no existe o el usuario no tiene acceso
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id, usuarios=request.user)
+    
+    # Verificar si es una petición AJAX
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Obtener parámetros de filtrado
+        data = json.loads(request.body)
+        tipo_formulario = data.get('tipo_formulario', 'REPORTE FOTOGRÁFICO')
+        
+        # Obtener reportes filtrados
+        reportes = proyecto.reportes.filter(tipo_formulario=tipo_formulario).order_by('-fecha_emision')
+        
+        # Preparar datos para la respuesta JSON
+        reportes_data = []
+        for reporte in reportes:
+            reportes_data.append({
+                'id': reporte.id,
+                'reporte_numero': reporte.reporte_numero,
+                'fecha_emision': reporte.fecha_emision.strftime('%Y-%m-%d'),
+                'descripcion': reporte.descripcion,
+                'fotos_urls': [foto.imagen.url for foto in reporte.fotos.all()],
+                'url_pdf': f'/reportes/pdf/{reporte.id}/',
+                'url_editar': f'/reportes/editar/{reporte.id}/',
+            })
+        
+        return JsonResponse({'reportes': reportes_data})
+    
+    # Si no es AJAX, cargar la página normalmente
+    tipo_formulario = request.GET.get('tipo_formulario', 'REPORTE FOTOGRÁFICO')
+    
+    # Obtener tipos de formulario únicos para el selector
+    tipos_formulario_unicos = list(proyecto.reportes.values_list('tipo_formulario', flat=True).distinct())
+    
+    context = {
+        'proyecto': proyecto,
+        'tipos_formulario_unicos': tipos_formulario_unicos,
+        'tipo_formulario_actual': tipo_formulario,
+    }
+    
+    return render(request, 'reportes/proyecto_detalle.html', context)
+
+
+@login_required
+def editar_reporte(request, reporte_id):
+    reporte = get_object_or_404(ReporteFotografico, id=reporte_id)
+    if not (request.user.rol in [Usuario.Rol.ADMIN, Usuario.Rol.EDITOR] or request.user.is_superuser):
+        return HttpResponseForbidden('No tienes permiso para editar este reporte.')
+
+    if request.method == 'POST':
+        form = ReporteForm(request.POST, request.FILES, instance=reporte)
+        foto_formset = FotoFormSet(request.POST, request.FILES, instance=reporte)
+        if form.is_valid() and foto_formset.is_valid():
+            with transaction.atomic():
+                form.save()
+                foto_formset.save()
+                messages.success(request, 'Reporte actualizado correctamente.')
+                return redirect('reportes:proyecto_detalle', proyecto_id=reporte.proyecto.id)
+    else:
+        form = ReporteForm(instance=reporte)
+        foto_formset = FotoFormSet(instance=reporte)
+
+    return render(request, 'reportes/crear_reporte.html', {
+        'form': form,
+        'foto_formset': foto_formset,
+        'proyecto': reporte.proyecto,
+        'proyecto_id': reporte.proyecto.id,
+        'edit_mode': True,
+        'reporte': reporte,
+    })
 
 @login_required
 def crear_reporte(request):
+    proyecto_id = (
+        request.GET.get('proyecto_id')
+        or request.GET.get('proyecto')
+        or request.POST.get('proyecto')
+    )
+    proyecto_instance = None
+    if proyecto_id:
+        try:
+            proyecto_instance = Proyecto.objects.get(id=proyecto_id)
+        except Proyecto.DoesNotExist:
+            proyecto_instance = None
+    
+    # Get the next report number for this project and report type
+    def get_next_report_number(proyecto, tipo_formulario):
+        last_report = ReporteFotografico.objects.filter(
+            proyecto=proyecto,
+            tipo_formulario=tipo_formulario
+        ).order_by('-reporte_numero').first()
+        return (last_report.reporte_numero + 1) if last_report else 1
+
     if request.method == 'POST':
         form = ReporteForm(request.POST, request.FILES)
         if form.is_valid():
             with transaction.atomic():
                 reporte = form.save(commit=False)
+                if proyecto_instance:
+                    reporte.proyecto = proyecto_instance
+                # Toma el tipo_formulario enviado por GET o POST
+                tipo_formulario = request.GET.get('tipo_formulario') or request.POST.get('tipo_formulario') or 'REPORTE FOTOGRÁFICO'
+                reporte.tipo_formulario = tipo_formulario
                 reporte.save()
                 
                 foto_formset = FotoFormSet(request.POST, request.FILES, instance=reporte)
                 if foto_formset.is_valid():
                     foto_formset.save()
-                    return redirect('reporte_pdf', reporte_id=reporte.id)
+                    # Redirige a la lista de reportes del proyecto y abre el PDF en nueva ventana
+                    request.session['abrir_pdf_id'] = reporte.id
+                    return redirect('reportes:proyecto_detalle', proyecto_id=reporte.proyecto.id)
                 else:
                     # Si hay errores en los formularios de fotos, mostrarlos
                     messages.error(request, 'Por favor corrija los errores en las imágenes.')
         else:
             foto_formset = FotoFormSet(request.POST, request.FILES)
     else:
-        form = ReporteForm()
+        proyecto_id = request.GET.get('proyecto_id')
+        tipo_formulario = request.GET.get('tipo_formulario')
+        # Solo permitir acceso si es REPORTE FOTOGRÁFICO
+        if tipo_formulario != 'REPORTE FOTOGRÁFICO':
+            from django.http import Http404
+            raise Http404('Solo se permite crear reportes fotográficos desde aquí.')
+        if proyecto_instance:
+            # Get the next report number
+            tipo_formulario = tipo_formulario or 'REPORTE FOTOGRÁFICO'
+            next_report_number = get_next_report_number(proyecto_instance, tipo_formulario)
+            
+            # Set initial data with project info and default values
+            initial_data = {
+                'proyecto': proyecto_instance,
+                'cliente': proyecto_instance.cliente,
+                'contratista': proyecto_instance.contratista,
+                'codigo_proyecto': proyecto_instance.codigo_proyecto,
+                'inicio_supervision': proyecto_instance.inicio_supervision,
+                'fecha_emision': timezone.now().date(),
+                'elaborado_por': f"{request.user.first_name} {request.user.last_name}".strip(),
+                'revisado_por': '',  # Se deja en blanco para que el usuario lo complete
+                # Se dejan en blanco para que el usuario los complete
+                'reporte_numero': '',
+                'version_reporte': '',
+                'mes_actual_obra': 1  # Valor por defecto, se puede cambiar
+            }
+            
+            if tipo_formulario:
+                initial_data['tipo_formulario'] = tipo_formulario
+                
+            form = ReporteForm(initial=initial_data)
+            form.fields['proyecto'].initial = proyecto_instance
+            from django import forms as django_forms
+            # Configurar campos ocultos
+            form.fields['proyecto'].widget = django_forms.HiddenInput()
+            form.fields['tipo_formulario'].widget = django_forms.HiddenInput()
+            
+            # Hacer que algunos campos sean de solo lectura ya que se llenan automáticamente
+            for field in ['cliente', 'contratista', 'codigo_proyecto']:
+                form.fields[field].widget.attrs['readonly'] = True
+            
+            # Asegurarse de que version_reporte sea editable
+            if 'version_reporte' in form.fields:
+                form.fields['version_reporte'].widget.attrs.pop('readonly', None)
+                form.fields['version_reporte'].widget.attrs['class'] = 'form-control'
+        else:
+            form = ReporteForm()
         foto_formset = FotoFormSet(queryset=FotoReporte.objects.none())
     
-    return render(request, 'reportes/crear_reporte.html', {
+    context = {
         'form': form,
         'foto_formset': foto_formset,
-    })
+    }
+    
+    if proyecto_instance:
+        context['proyecto'] = proyecto_instance
+        context['proyecto_id'] = proyecto_instance.id
+    else:
+        context['proyecto_id'] = proyecto_id
+        
+    return render(request, 'reportes/crear_reporte.html', context)
 
+@login_required
 def lista_reportes(request):
-    reportes = ReporteFotografico.objects.prefetch_related('fotos').all().order_by('-fecha_emision')
-    return render(request, 'reportes/lista_reportes.html', {'reportes': reportes})
+    # Obtener todos los proyectos del usuario
+    proyectos = Proyecto.objects.filter(usuarios=request.user)
+    
+    # Obtener parámetros de filtrado
+    proyecto_id = request.GET.get('proyecto_id')
+    tipo_formulario = request.GET.get('tipo_formulario')
+    
+    # Inicializar queryset de reportes
+    reportes = ReporteFotografico.objects.prefetch_related('fotos').filter(proyecto__usuarios=request.user)
+    
+    # Aplicar filtros
+    if proyecto_id and proyecto_id.isdigit():
+        proyecto_id = int(proyecto_id)
+        reportes = reportes.filter(proyecto_id=proyecto_id)
+        
+        # Obtener tipos de formulario únicos para el proyecto seleccionado
+        try:
+            proyecto = Proyecto.objects.get(id=proyecto_id)
+            tipos_formulario_unicos = list(proyecto.reportes.values_list('tipo_formulario', flat=True).distinct())
+            
+            # Filtrar por tipo de formulario si se especifica
+            if tipo_formulario:
+                reportes = reportes.filter(tipo_formulario=tipo_formulario)
+                
+        except Proyecto.DoesNotExist:
+            tipos_formulario_unicos = []
+    else:
+        tipos_formulario_unicos = []
+    
+    # Ordenar por fecha de emisión descendente
+    reportes = reportes.order_by('-fecha_emision')
+    
+    # Paginación
+    paginator = Paginator(reportes, 10)  # 10 reportes por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'reportes/lista_reportes.html', {
+        'reportes': page_obj,
+        'tipos_formulario_unicos': tipos_formulario_unicos,
+        'proyectos': proyectos,
+        'proyecto_id': int(proyecto_id) if (proyecto_id and proyecto_id.isdigit()) else None,
+        'tipo_formulario_actual': tipo_formulario,
+    })
 
 def borrar_reporte(request, reporte_id):
     reporte = get_object_or_404(ReporteFotografico, id=reporte_id)
+    proyecto_id = reporte.proyecto.id
     reporte.delete()
-    return redirect('lista_reportes')
+    return redirect('reportes:proyecto_detalle', proyecto_id=proyecto_id)
 
 @login_required
 def perfil_usuario(request):
@@ -67,7 +278,7 @@ def perfil_usuario(request):
         if form.is_valid():
             form.save()
             messages.success(request, _('Tu perfil ha sido actualizado correctamente.'))
-            return redirect('perfil_usuario')
+            return redirect('reportes:perfil_usuario')
     else:
         form = PerfilUsuarioForm(instance=request.user)
     
@@ -84,7 +295,7 @@ def cambiar_contrasena(request):
             user = form.save()
             update_session_auth_hash(request, user)
             messages.success(request, _('Tu contraseña ha sido cambiada exitosamente.'))
-            return redirect('perfil_usuario')
+            return redirect('reportes:perfil_usuario')
     else:
         form = CambiarContrasenaForm(request.user)
     
@@ -111,196 +322,261 @@ def registro_usuario(request):
             
             if user is not None:
                 login(request, user)
-                messages.success(request, _('¡Registro exitoso! Ahora estás conectado.'))
-                return redirect('lista_reportes')
+                messages.success(request, '¡Registro exitoso! Ahora estás conectado.')
+                return redirect('home')
     else:
         form = RegistroUsuarioForm()
     
     return render(request, 'registration/registro.html', {'form': form})
 
+@login_required
 def reporte_pdf(request, reporte_id):
-    reporte = get_object_or_404(ReporteFotografico, id=reporte_id)
-    fotos = reporte.fotos.all()
+    # Obtener el reporte o retornar 404 si no existe o el usuario no tiene acceso
+    reporte = get_object_or_404(ReporteFotografico, id=reporte_id, proyecto__usuarios=request.user)
     
-    # Ruta al logo
-    logo_path = os.path.join(settings.STATIC_ROOT, 'img', 'logo_jlv.jpg')
-    logo_url = None
-    if os.path.exists(logo_path):
-        logo_url = os.path.join(settings.STATIC_URL, 'img', 'logo_jlv.jpg')
-    
-    # Preparar contexto con las imágenes
-    with translation.override('es'):
-        # Preparar rutas de las imágenes
-        fotos_list = []
-        for i, foto in enumerate(fotos, 1):
-            if not foto.imagen:
-                continue
-                
-            try:
-                # Obtener la URL de la imagen
-                foto_url = f"{request.scheme}://{request.get_host()}{foto.imagen.url}"
-                relative_url = str(foto.imagen)
-                
-                # Para el PDF, necesitamos la ruta del sistema de archivos
-                foto_path = None
-                if hasattr(foto.imagen, 'path') and foto.imagen.path:
-                    if os.path.exists(foto.imagen.path):
-                        foto_path = foto.imagen.path
-                    # Si no existe, intentar con la ruta relativa a MEDIA_ROOT
-                    elif settings.MEDIA_ROOT:
-                        media_relative = str(foto.imagen)
-                        full_path = os.path.join(settings.MEDIA_ROOT, media_relative)
-                        if os.path.exists(full_path):
-                            foto_path = full_path
-                
-                # Si no se encontró la ruta del sistema de archivos, usar la URL
-                if not foto_path or not os.path.exists(foto_path):
-                    print(f"[INFO] Usando URL para la imagen {i}: {foto_url}")
-                    # Para el PDF, necesitamos una ruta de archivo, no una URL
-                    # Intentar descargar la imagen temporalmente
-                    try:
-                        import tempfile
-                        import urllib.request
-                        import shutil
-                        
-                        # Crear directorio temporal si no existe
-                        temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp')
-                        os.makedirs(temp_dir, exist_ok=True)
-                        
-                        # Descargar la imagen
-                        temp_path = os.path.join(temp_dir, os.path.basename(relative_url))
-                        with urllib.request.urlopen(foto_url) as response, open(temp_path, 'wb') as out_file:
-                            shutil.copyfileobj(response, out_file)
-                        
-                        if os.path.exists(temp_path):
-                            foto_path = temp_path
-                            print(f"[INFO] Imagen descargada temporalmente a: {temp_path}")
-                    except Exception as e:
-                        print(f"[ERROR] No se pudo descargar la imagen: {str(e)}")
-                        foto_path = None
-                
-                # Usar datos en base64 si no se pudo obtener la ruta del archivo
-                if not foto_path or not os.path.exists(foto_path):
-                    try:
-                        import base64
-                        with open(foto.imagen.path, 'rb') as img_file:
-                            foto_base64 = base64.b64encode(img_file.read()).decode('utf-8')
-                            foto_path = f"data:image/jpeg;base64,{foto_base64}"
-                            print("[INFO] Usando datos en base64 para la imagen")
-                    except Exception as e:
-                        print(f"[ERROR] No se pudo codificar la imagen en base64: {str(e)}")
-                        foto_path = None
-                
-                # Si todo falla, usar un placeholder
-                if not foto_path:
-                    foto_path = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-family%3D%22Arial%22%20font-size%3D%2210%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EImagen%20no%20disponible%3C%2Ftext%3E%3C%2Fsvg%3E"
-                    print("[WARNING] Usando placeholder para la imagen")
-                
-                fotos_list.append({
-                    'imagen': foto,
-                    'path': foto_path,            # Ruta del sistema de archivos, URL o datos en base64
-                    'url': foto_url,               # URL completa para la vista previa
-                    'relative_url': relative_url,  # Ruta relativa para depuración
-                    'descripcion': foto.descripcion or f"Foto {i}",
-                    'fecha_toma': getattr(foto.imagen, 'created', None) or "Fecha no especificada"
+    try:
+        # Obtener las fotos del reporte
+        fotos = []
+        for i, foto in enumerate(reporte.fotos.all().order_by('orden'), 1):
+            # Construir la ruta completa al archivo de imagen
+            if foto.imagen:
+                imagen_path = os.path.join(settings.MEDIA_ROOT, str(foto.imagen))
+                fotos.append({
+                    'imagen_path': imagen_path,
+                    'descripcion': foto.descripcion or f'Foto {i}'
                 })
-                
-                print(f"[DEBUG] Imagen {i} procesada:")
-                print(f"  - Ruta: {foto_path}")
-                print(f"  - URL: {foto_url}")
-                print(f"  - Relativa: {relative_url}")
-                
-            except Exception as e:
-                print(f"[ERROR] Error procesando imagen {i}: {str(e)}")
         
-        context = {
-            'reporte': reporte,
-            'fotos': fotos_list,
-            'logo_url': logo_url,
-            'request': request,
-            'debug': settings.DEBUG
+        # Crear el generador de PDF sin buffer inicial
+        pdf_generator = ReportePDFGenerator()
+        
+        # Generar el PDF (esto creará su propio buffer)
+        pdf_content = pdf_generator.generate_pdf(reporte, fotos)
+        
+        # Configurar la respuesta HTTP con el PDF
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="reporte_{reporte.id}.pdf"'
+        return response
+        
+    except Exception as e:
+        # En caso de error, registrar el error y mostrar mensaje al usuario
+        import traceback
+        error_msg = f'Error al generar el PDF: {str(e)}'
+        print(error_msg)
+        traceback.print_exc()
+        messages.error(request, error_msg)
+        # Redirigir a la página de detalle del proyecto
+        return redirect('reportes:proyecto_detalle', proyecto_id=reporte.proyecto_id)
+
+@login_required
+def crear_proyecto(request):
+    """
+    Vista para crear un nuevo proyecto.
+    Solo accesible para administradores.
+    """
+    if not (request.user.rol == Usuario.Rol.ADMIN or request.user.is_superuser):
+        messages.error(request, 'No tienes permiso para realizar esta acción.')
+        return redirect('reportes:dashboard')
+    
+    if request.method == 'POST':
+        form = ProyectoForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    proyecto = form.save(commit=False)
+                    proyecto.save()
+                    form.save_m2m()  # Guardar relaciones many-to-many
+                    messages.success(request, f'Proyecto "{proyecto.nombre}" creado exitosamente.')
+                    return redirect('reportes:editar_proyecto', proyecto_id=proyecto.id)
+            except Exception as e:
+                messages.error(request, f'Error al guardar el proyecto: {str(e)}')
+        else:
+            messages.error(request, 'Por favor, corrija los errores en el formulario.')
+    else:
+        form = ProyectoForm()
+    
+    return render(request, 'reportes/crear_proyecto.html', {
+        'form': form,
+        'titulo': 'Nuevo Proyecto'
+    })
+
+@login_required
+def editar_proyecto(request, proyecto_id):
+    """
+    Vista para editar un proyecto existente.
+    Solo accesible para administradores.
+    """
+    if not (request.user.rol == Usuario.Rol.ADMIN or request.user.is_superuser):
+        messages.error(request, 'No tienes permiso para realizar esta acción.')
+        return redirect('reportes:dashboard')
+    
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    if request.method == 'POST':
+        form = ProyectoForm(request.POST, request.FILES, instance=proyecto)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    proyecto = form.save()
+                    messages.success(request, f'Proyecto "{proyecto.nombre}" actualizado exitosamente.')
+                    return redirect('reportes:editar_proyecto', proyecto_id=proyecto.id)
+            except Exception as e:
+                messages.error(request, f'Error al actualizar el proyecto: {str(e)}')
+        else:
+            messages.error(request, 'Por favor, corrija los errores en el formulario.')
+    else:
+        form = ProyectoForm(instance=proyecto)
+    
+    return render(request, 'reportes/crear_proyecto.html', {
+        'form': form,
+        'proyecto': proyecto,
+        'titulo': 'Editar Proyecto'
+    })
+
+@login_required
+def listar_proyectos(request):
+    """
+    Vista para listar todos los proyectos.
+    Solo accesible para administradores.
+    """
+    if not (request.user.rol == Usuario.Rol.ADMIN or request.user.is_superuser):
+        messages.error(request, 'No tienes permiso para acceder a esta sección.')
+        return redirect('reportes:dashboard')
+    
+    try:
+        proyectos = Proyecto.objects.all().order_by('-id')
+        return render(request, 'reportes/listar_proyectos.html', {
+            'proyectos': proyectos,
+            'total_proyectos': proyectos.count()
+        })
+    except Exception as e:
+        messages.error(request, f'Error al cargar la lista de proyectos: {str(e)}')
+        return redirect('reportes:dashboard')
+
+@login_required
+def eliminar_proyecto(request, proyecto_id):
+    """
+    Vista para eliminar un proyecto existente.
+    Solo accesible para administradores y requiere método POST.
+    """
+    if not (request.user.rol == Usuario.Rol.ADMIN or request.user.is_superuser):
+        messages.error(request, 'No tienes permiso para realizar esta acción.')
+        return redirect('reportes:dashboard')
+    
+    if request.method != 'POST':
+        messages.error(request, 'Método no permitido.')
+        return redirect('reportes:listar_proyectos')
+    
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    proyecto_nombre = proyecto.nombre
+    
+    try:
+        with transaction.atomic():
+            # Verificar si el proyecto tiene reportes asociados
+            if proyecto.reportes.exists():
+                messages.warning(
+                    request, 
+                    f'No se puede eliminar el proyecto "{proyecto_nombre}" porque tiene reportes asociados.'
+                )
+                return redirect('reportes:listar_proyectos')
+            
+            proyecto.delete()
+            messages.success(request, f'El proyecto "{proyecto_nombre}" ha sido eliminado correctamente.')
+    except Exception as e:
+        messages.error(
+            request, 
+            f'Error al eliminar el proyecto "{proyecto_nombre}": {str(e)}'
+        )
+    
+    return redirect('reportes:listar_proyectos')
+
+@login_required
+def api_reportes_por_tipo(request):
+    try:
+        print("\n=== Iniciando api_reportes_por_tipo ===")
+        print(f"Usuario: {request.user}")
+        print(f"Parámetros GET: {request.GET}")
+        
+        # Obtener parámetros
+        proyecto_id = request.GET.get('proyecto_id')
+        tipo_formulario = request.GET.get('tipo_formulario')
+        
+        print(f"Proyecto ID: {proyecto_id}, Tipo: {tipo_formulario}")
+        
+        # Validar parámetros
+        if not (proyecto_id and tipo_formulario):
+            error_msg = 'Se requieren los parámetros proyecto_id y tipo_formulario'
+            print(f"Error: {error_msg}")
+            return JsonResponse(
+                {'error': error_msg}, 
+                status=400
+            )
+            
+        # Buscar el proyecto para verificar permisos
+        from .models import ReporteFotografico, Proyecto
+        try:
+            proyecto = Proyecto.objects.get(id=proyecto_id, usuarios=request.user)
+            print(f"Proyecto encontrado: {proyecto.nombre}")
+        except Proyecto.DoesNotExist:
+            error_msg = 'Proyecto no encontrado o sin permisos'
+            print(f"Error: {error_msg}")
+            return JsonResponse(
+                {'error': error_msg}, 
+                status=404
+            )
+        
+        # Filtrar reportes del tipo y proyecto seleccionados
+        reportes = ReporteFotografico.objects.filter(
+            proyecto_id=proyecto_id,
+            tipo_formulario=tipo_formulario
+        ).prefetch_related('fotos').order_by('-fecha_emision')
+        
+        print(f"Total de reportes encontrados: {reportes.count()}")
+        
+        # Preparar datos de respuesta
+        data = []
+        for r in reportes:
+            try:
+                foto_principal = r.fotos.first()
+                # Construir URLs usando el namespace 'reportes:'
+                url_pdf = reverse('reportes:reporte_pdf', args=[r.id])
+                url_editar = reverse('reportes:editar_reporte', args=[r.id])
+                
+                reporte_data = {
+                    'id': r.id,
+                    'descripcion': r.descripcion or '',
+                    'fecha_emision': r.fecha_emision.strftime('%Y-%m-%d'),
+                    'reporte_numero': r.reporte_numero or '',
+                    'url_pdf': url_pdf,
+                    'url_editar': url_editar,
+                    'tipo_formulario': r.tipo_formulario,
+                    'foto_principal_url': foto_principal.imagen.url if (foto_principal and hasattr(foto_principal, 'imagen')) else None,
+                    'fotos_urls': [foto.imagen.url for foto in r.fotos.all()[:5] if hasattr(foto, 'imagen') and hasattr(foto.imagen, 'url')]
+                }
+                print(f"Reporte {r.id}: {reporte_data}")
+                data.append(reporte_data)
+            except Exception as e:
+                error_msg = f"Error procesando reporte {r.id}: {str(e)}"
+                print(error_msg)
+                import traceback
+                print(traceback.format_exc())
+                continue
+        
+        response_data = {
+            'status': 'success',
+            'reportes': data,
+            'count': len(data),
+            'proyecto': proyecto.nombre,
+            'tipo_formulario': tipo_formulario
         }
         
-        # Renderizar la plantilla HTML
-        template = get_template('reportes/reporte_pdf.html')
-        html_string = template.render(context=context, request=request)
+        print(f"=== Respuesta: {response_data}")
+        return JsonResponse(response_data)
         
-        # Función para manejar las rutas de los recursos
-        def fetch_resources(uri, rel):
-            # Imprimir información de depuración
-            print(f"\n[DEBUG] Procesando URI: {uri}")
-            
-            # Si es una URL de datos (data:image/...)
-            if uri.startswith('data:'):
-                return uri
-                
-            # Parsear la URL
-            parsed_uri = urlparse(uri)
-            
-            # Si es una URL local (sin esquema o con esquema file:)
-            if not parsed_uri.scheme or parsed_uri.scheme == 'file':
-                # Obtener la ruta del sistema de archivos
-                if parsed_uri.scheme == 'file':
-                    path = parsed_uri.path
-                else:
-                    path = uri
-                
-                # Si la ruta comienza con /static/ o /media/
-                if path.startswith('/static/'):
-                    path = path.replace('/static/', '')
-                    full_path = os.path.join(settings.STATIC_ROOT, path)
-                elif path.startswith('/media/'):
-                    path = path.replace('/media/', '')
-                    full_path = os.path.join(settings.MEDIA_ROOT, path)
-                else:
-                    full_path = os.path.join(settings.BASE_DIR, path.lstrip('/'))
-                
-                # Verificar si el archivo existe
-                if os.path.exists(full_path):
-                    print(f"[DEBUG] Archivo encontrado: {full_path}")
-                    return full_path
-                else:
-                    print(f"[ERROR] Archivo no encontrado: {full_path}")
-                    return None
-            
-            # Si es una URL remota, intentar descargarla
-            elif parsed_uri.scheme in ('http', 'https'):
-                try:
-                    import requests
-                    response = requests.get(uri)
-                    if response.status_code == 200:
-                        # Crear un archivo temporal con el contenido
-                        import tempfile
-                        fd, filename = tempfile.mkstemp()
-                        with os.fdopen(fd, 'wb') as f:
-                            f.write(response.content)
-                        print(f"[DEBUG] Imagen descargada: {uri} -> {filename}")
-                        return filename
-                except Exception as e:
-                    print(f"[ERROR] Error al descargar {uri}: {str(e)}")
-            
-            # Si no se pudo manejar la URI, devolver None
-            print(f"[WARNING] No se pudo manejar la URI: {uri}")
-                
-            print(f"[ERROR] Archivo no encontrado: {path}")
-            return None
-        
-        # Crear un buffer para el PDF
-        result = io.BytesIO()
-        
-        # Convertir HTML a PDF
-        pdf = pisa.CreatePDF(
-            src=html_string,
-            dest=result,
-            encoding='UTF-8',
-            link_callback=fetch_resources
+    except Exception as e:
+        import traceback
+        error_msg = f"Error en api_reportes_por_tipo: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return JsonResponse(
+            {'error': 'Error interno del servidor', 'details': str(e)}, 
+            status=500
         )
-        
-        if not pdf.err:
-            # Obtener el contenido del buffer
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'inline; filename="reporte_{reporte_id}.pdf"'
-            return response
-        
-        # Si hay un error, devolver un mensaje de error
-        return HttpResponse('Error al generar el PDF: %s' % pdf.err, status=500)

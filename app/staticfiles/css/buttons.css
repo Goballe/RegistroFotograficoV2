@@ -1,0 +1,156 @@
+/* Estilo base moderno para los botones */
+.modern-btn {
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: none;
+    border-radius: 12px;
+    color: #212529;
+    font-weight: 600;
+    padding: 14px 28px;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin: 4px;
+    outline: none !important;
+}
+
+/* Efecto hover sutil */
+.modern-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    outline: none !important;
+    border: none;
+}
+
+/* Efecto cuando está seleccionado */
+.modern-btn.active {
+    background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    transform: translateY(-2px);
+    border: none;
+    animation: float 3s ease-in-out infinite;
+    outline: none !important;
+}
+
+/* Animación de flotación para el botón activo */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Efecto de pulso sutil para el botón activo */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+/* Eliminado el efecto de borde en el botón activo */
+.modern-btn.active::after {
+    content: none;
+}
+
+/* Efecto de onda al hacer clic */
+.modern-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.6);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.modern-btn:active::before {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(30, 30);
+        opacity: 0;
+    }
+}
+
+/* Estilo para el ícono dentro del botón */
+.modern-btn i {
+    margin-right: 10px;
+    font-size: 1.2em;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Efecto en el ícono al pasar el mouse */
+.modern-btn:hover i {
+    transform: translateX(4px) scale(1.1);
+    color: #6366f1;
+}
+
+/* Efecto de carga al hacer clic */
+@keyframes clickEffect {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+
+.modern-btn:active, .modern-btn:focus {
+    animation: clickEffect 0.3s ease;
+    outline: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 
+                0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Efecto de borde sutil al pasar el mouse - Eliminado */
+.modern-btn::after {
+    content: none;
+}
+
+.modern-btn:hover::after {
+    content: none;
+}
+
+/* Efecto de brillo al pasar el mouse */
+.modern-btn:hover .btn-shine {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: skewX(-25deg);
+    animation: shine 1.5s infinite;
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    100% { left: 150%; }
+}
+
+/* Asegurar que el texto del botón esté por encima de los efectos */
+.modern-btn span {
+    position: relative;
+    z-index: 1;
+}

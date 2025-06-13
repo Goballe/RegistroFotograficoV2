@@ -25,73 +25,58 @@
                         
                         <!-- Nombre Completo -->
                         <div class="mb-3">
-                            <label for="{{ form.nombre_completo.id_for_label }}" class="form-label">
-                                {{ form.nombre_completo.label }}
-                            </label>
+                            <label for="{{ form.nombre_completo.id_for_label }}" class="form-label">{{ form.nombre_completo.label }}</label>
                             {{ form.nombre_completo }}
                             {% if form.nombre_completo.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.nombre_completo.errors.0 }}
-                                </div>
+                                <div class="invalid-feedback d-block">{{ form.nombre_completo.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Ingresa tu nombre completo como aparece en tu identificación.</div>
                         </div>
-                        
                         <!-- Nombre de Usuario -->
                         <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">
-                                {{ form.username.label }}
-                            </label>
+                            <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
                             {{ form.username }}
                             {% if form.username.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.username.errors.0 }}
-                                </div>
+                                <div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">{{ form.username.help_text }}</div>
+                            {% if form.username.help_text %}
+                                <div class="form-text">{{ form.username.help_text|safe }}</div>
+                            {% endif %}
                         </div>
-                        
-                        <!-- Correo Electrónico -->
+                        <!-- Email -->
                         <div class="mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">
-                                {{ form.email.label }}
-                            </label>
+                            <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
                             {{ form.email }}
                             {% if form.email.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.email.errors.0 }}
-                                </div>
+                                <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Utiliza tu correo corporativo.</div>
+                            {% if form.email.help_text %}
+                                <div class="form-text">{{ form.email.help_text|safe }}</div>
+                            {% endif %}
                         </div>
-                        
                         <!-- Contraseña -->
                         <div class="mb-3">
-                            <label for="{{ form.password1.id_for_label }}" class="form-label">
-                                {{ form.password1.label }}
-                            </label>
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">{{ form.password1.label }}</label>
                             {{ form.password1 }}
                             {% if form.password1.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.password1.errors.0 }}
-                                </div>
+                                <div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">{{ form.password1.help_text|safe }}</div>
+                            {% if form.password1.help_text %}
+                                <div class="form-text">{{ form.password1.help_text|safe }}</div>
+                            {% endif %}
                         </div>
-                        
                         <!-- Confirmar Contraseña -->
                         <div class="mb-4">
-                            <label for="{{ form.password2.id_for_label }}" class="form-label">
-                                {{ form.password2.label }}
-                            </label>
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">{{ form.password2.label }}</label>
                             {{ form.password2 }}
                             {% if form.password2.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.password2.errors.0 }}
-                                </div>
+                                <div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">{{ form.password2.help_text }}</div>
+                            {% if form.password2.help_text %}
+                                <div class="form-text">{{ form.password2.help_text|safe }}</div>
+                            {% endif %}
                         </div>
+
+
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -101,7 +86,7 @@
                     </form>
                     
                     <div class="mt-4 text-center">
-                        <p class="mb-0">¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a></p>
+                        <p class="mb-0">¿Ya tienes una cuenta? <a href="{% url 'reportes:login' %}">Inicia sesión aquí</a></p>
                     </div>
                 </div>
             </div>

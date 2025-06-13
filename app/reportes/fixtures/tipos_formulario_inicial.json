@@ -1,0 +1,13 @@
+[
+  {"model": "reportes.tipoformularioproyecto", "pk": 1, "fields": {"nombre": "REPORTE DIARIO"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 2, "fields": {"nombre": "REPORTE FOTOGRÁFICO"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 3, "fields": {"nombre": "CONTROL DE OBS CALIDAD"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 4, "fields": {"nombre": "CONTROL DE OBS SSOMA"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 5, "fields": {"nombre": "CONTROL DE NC CALIDAD"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 6, "fields": {"nombre": "CONTROL DE NC SSOMA"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 7, "fields": {"nombre": "CONTROL DE RFI"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 8, "fields": {"nombre": "CONTROL DE ODC"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 9, "fields": {"nombre": "CONTROL DE VALORIZACIONES"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 10, "fields": {"nombre": "CONTROL DE DOSSIER"}},
+  {"model": "reportes.tipoformularioproyecto", "pk": 11, "fields": {"nombre": "CONTROL DE CARTAS"}}
+]

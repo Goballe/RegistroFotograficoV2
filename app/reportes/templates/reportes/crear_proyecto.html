@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }} - Registro Fotográfico{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+        <a href="{% url 'reportes:listar_proyectos' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver a Proyectos
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                {{ form.nombre.label }}
+                                {% if form.nombre.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {% render_field form.nombre class="form-control" %}
+                            {% if form.nombre.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nombre.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.codigo_proyecto.id_for_label }}" class="form-label">
+                                {{ form.codigo_proyecto.label }}
+                                {% if form.codigo_proyecto.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {% render_field form.codigo_proyecto class="form-control" %}
+                            {% if form.codigo_proyecto.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.codigo_proyecto.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.cliente.id_for_label }}" class="form-label">
+                                {{ form.cliente.label }}
+                            </label>
+                            {% render_field form.cliente class="form-control" %}
+                            {% if form.cliente.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cliente.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.contratista.id_for_label }}" class="form-label">
+                                {{ form.contratista.label }}
+                            </label>
+                            {% render_field form.contratista class="form-control" %}
+                            {% if form.contratista.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.contratista.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.inicio_supervision.id_for_label }}" class="form-label">
+                                {{ form.inicio_supervision.label }}
+                            </label>
+                            {% render_field form.inicio_supervision class="form-control" %}
+                            {% if form.inicio_supervision.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.inicio_supervision.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.imagen.id_for_label }}" class="form-label">
+                                {{ form.imagen.label }}
+                            </label>
+                            {% render_field form.imagen class="form-control" %}
+                            {% if form.imagen.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.imagen.errors.0 }}
+                                </div>
+                            {% endif %}
+                            {% if form.instance.imagen %}
+                                <div class="mt-2">
+                                    <img src="{{ form.instance.imagen.url }}" alt="Imagen actual" class="img-thumbnail" style="max-height: 100px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                {{ form.descripcion.label }}
+                            </label>
+                            {% render_field form.descripcion class="form-control" rows="3" %}
+                            {% if form.descripcion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.descripcion.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Tipos de Formulario Permitidos</h6>
+                                <small class="text-muted">{{ form.tipos_formulario.help_text }}</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for checkbox in form.tipos_formulario %}
+                                        <div class="col-md-4 mb-2">
+                                            <div class="form-check">
+                                                {{ checkbox.tag }}
+                                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                                    {{ checkbox.choice_label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.tipos_formulario.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.tipos_formulario.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar
+                    </button>
+                    
+                    {% if proyecto %}
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#eliminarModal">
+                            <i class="fas fa-trash-alt me-1"></i> Eliminar Proyecto
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if proyecto %}
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="eliminarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="eliminarModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el proyecto "{{ proyecto.nombre }}"?</p>
+                <p class="text-danger">Esta acción no se puede deshacer y se eliminarán todos los reportes asociados.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{% url 'reportes:eliminar_proyecto' proyecto.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+(function() {
+    'use strict';
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+{% endblock %}

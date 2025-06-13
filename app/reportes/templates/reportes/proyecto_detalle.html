@@ -1,0 +1,523 @@
+{% extends 'base.html' %}
+{% block title %}Detalle del Proyecto{% endblock %}
+{% block content %}
+<style>
+/* Estilos para los botones de tipo de formulario */
+.formulario-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    height: 100%;
+    background: linear-gradient(145deg, #ffffff, #f5f7fa);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.formulario-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.formulario-btn {
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem 1rem;
+    border: none;
+    background: transparent;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #2d3748;
+    text-decoration: none;
+}
+
+.formulario-btn i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #4a5568;
+    transition: all 0.3s ease;
+}
+
+.formulario-btn .formulario-titulo {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+}
+
+.formulario-btn .formulario-desc {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-bottom: 0.5rem;
+}
+
+.formulario-btn .badge {
+    margin-top: 0.5rem;
+    font-weight: 500;
+    font-size: 0.7rem;
+    padding: 0.35em 0.65em;
+    border-radius: 50rem;
+    background: rgba(66, 153, 225, 0.1);
+    color: #4299e1;
+}
+
+/* Estilos para cuando el botón está activo/seleccionado */
+.formulario-card.active {
+    background: linear-gradient(145deg, #f0f9ff, #e0f2fe);
+    border: 1px solid #bae6fd;
+}
+
+.formulario-card.active .formulario-btn i {
+    color: #0ea5e9;
+    transform: scale(1.1);
+}
+
+/* Efecto de hover */
+.formulario-card:not(.active):hover {
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+}
+
+.formulario-card:not(.active):hover .formulario-btn i {
+    color: #0ea5e9;
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .formulario-btn {
+        padding: 1.25rem 0.75rem;
+    }
+    
+    .formulario-btn i {
+        font-size: 2rem;
+    }
+    
+    .formulario-btn .formulario-titulo {
+        font-size: 0.9rem;
+    }
+}
+
+/* Estilos para el botón de crear */
+#btn-crear-nuevo {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+}
+
+#btn-crear-nuevo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+#btn-crear-nuevo:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+#btn-crear-nuevo i {
+    margin-right: 0.5rem;
+}
+
+</style>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-center">
+                {% if proyecto.imagen %}
+                    <div class="me-md-4 mb-3 mb-md-0" style="width: 120px; height: 120px; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <img src="{{ proyecto.imagen.url }}" alt="Imagen del proyecto" class="img-fluid h-100 w-100" style="object-fit: cover;">
+                    </div>
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center rounded me-md-4 mb-3 mb-md-0" style="width: 120px; height: 120px; border-radius: 12px;">
+                        <i class="bi bi-building text-secondary" style="font-size: 2.5rem;"></i>
+                    </div>
+                {% endif %}
+                <div class="text-center text-md-start">
+                    <h1 class="h2 mb-2">{{ proyecto.nombre }}</h1>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar3 me-1"></i> Inicio: {{ proyecto.inicio_supervision|date:"d/m/Y" }}
+                    </p>
+                    {% if proyecto.cliente %}
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-person-lines-fill me-1"></i> Cliente: {{ proyecto.cliente }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h2 class="h4 mb-4"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i> Formularios disponibles</h2>
+            <div class="row g-4">
+                {% for tipo in proyecto.tipos_formulario.all %}
+                {% with tipo_nombre=tipo.nombre|upper %}
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="formulario-card" data-formulario="{{ tipo.nombre }}">
+                        <button type="button" class="formulario-btn" data-formulario="{{ tipo.nombre }}">
+                            {% if tipo_nombre == 'REPORTE FOTOGRÁFICO' or tipo_nombre == 'REPORTE FOTOGRAFICO' %}
+                                <i class="bi bi-camera-fill"></i>
+                                <span class="formulario-titulo">Reporte Fotográfico</span>
+                                <span class="formulario-desc">Documentación visual</span>
+                                <span class="badge">Fotos</span>
+                            {% elif tipo_nombre == 'REPORTE DIARIO' %}
+                                <i class="bi bi-journal-text"></i>
+                                <span class="formulario-titulo">Reporte Diario</span>
+                                <span class="formulario-desc">Actividades del día</span>
+                                <span class="badge">Diario</span>
+                            {% elif tipo_nombre == 'CONTROL DE OBS CALIDAD' %}
+                                <i class="bi bi-clipboard-check"></i>
+                                <span class="formulario-titulo">Observaciones</span>
+                                <span class="formulario-desc">Control de calidad</span>
+                                <span class="badge">OBS</span>
+                            {% elif tipo_nombre == 'CONTROL DE NC CALIDAD' %}
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span class="formulario-titulo">No Conformidades</span>
+                                <span class="formulario-desc">Control de calidad</span>
+                                <span class="badge">NC</span>
+                            {% elif tipo_nombre == 'CONTROL DE NC SSOMA' %}
+                                <i class="bi bi-shield-exclamation"></i>
+                                <span class="formulario-titulo">SSOMA</span>
+                                <span class="formulario-desc">No conformidades</span>
+                                <span class="badge">SSOMA</span>
+                            {% elif tipo_nombre == 'CONTROL DE RFI' %}
+                                <i class="bi bi-question-square"></i>
+                                <span class="formulario-titulo">RFI</span>
+                                <span class="formulario-desc">Request for Information</span>
+                                <span class="badge">Consultas</span>
+                            {% elif tipo_nombre == 'CONTROL DE ODC' %}
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span class="formulario-titulo">Órdenes de Cambio</span>
+                                <span class="formulario-desc">Seguimiento</span>
+                                <span class="badge">ODC</span>
+                            {% elif tipo_nombre == 'CONTROL DE VALORIZACIONES' %}
+                                <i class="bi bi-cash-stack"></i>
+                                <span class="formulario-titulo">Valorizaciones</span>
+                                <span class="formulario-desc">Control financiero</span>
+                                <span class="badge">$$$</span>
+                            {% elif tipo_nombre == 'CONTROL DE DOSSIER' %}
+                                <i class="bi bi-folder-symlink"></i>
+                                <span class="formulario-titulo">Dossier</span>
+                                <span class="formulario-desc">Documentación</span>
+                                <span class="badge">Docs</span>
+                            {% elif tipo_nombre == 'CONTROL DE CARTAS' %}
+                                <i class="bi bi-envelope-paper"></i>
+                                <span class="formulario-titulo">Cartas</span>
+                                <span class="formulario-desc">Comunicación formal</span>
+                                <span class="badge">Correspondencia</span>
+                            {% else %}
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span class="formulario-titulo">{{ tipo.nombre }}</span>
+                                <span class="formulario-desc">Formulario personalizado</span>
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mb-4">
+        <button id="btn-crear-nuevo" class="modern-btn" style="min-width:180px;" disabled>
+            <i class="bi bi-plus-circle me-2"></i><span id="texto-btn-crear">CREAR NUEVO</span>
+        </button>
+    </div>
+
+    <div id="tabla-reportes-container" class="mb-4"></div>
+
+{% csrf_token %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let tipoFormularioSeleccionado = null;
+    const btnCrear = document.getElementById('btn-crear-nuevo');
+    const textoBtnCrear = document.getElementById('texto-btn-crear');
+    const proyectoId = '{{ proyecto.id }}';
+    const tablaReportesContainer = document.getElementById('tabla-reportes-container');
+
+    // Inicializa el botón crear
+    btnCrear.disabled = true;
+    textoBtnCrear.textContent = 'SELECCIONE UN FORMULARIO';
+    
+    // Mejorar la accesibilidad
+    document.querySelectorAll('.formulario-btn').forEach(btn => {
+        btn.setAttribute('aria-label', `Seleccionar formulario de ${btn.querySelector('.formulario-titulo')?.textContent || 'tipo de formulario'}`);
+    });
+
+    // Función para renderizar la tabla de reportes
+    function renderTablaReportes(reportes) {
+        if (!reportes || reportes.length === 0) {
+            tablaReportesContainer.innerHTML = `<div class='alert alert-info text-center mt-3'>No hay reportes creados para este tipo de formulario.<br><small>¡Crea el primero usando el botón!</small></div>`;
+            return;
+        }
+        let html = `<div class="table-responsive"><table class="table table-striped table-hover align-middle shadow-sm rounded">
+            <thead class="table-light">
+                <tr>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Foto</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        for (const r of reportes) {
+            html += `<tr>
+                <td>${r.reporte_numero ?? '-'}</td>
+                <td>${r.fecha_emision}</td>
+                <td>${r.descripcion ?? ''}</td>
+                <td>`;
+            if (r.fotos_urls && r.fotos_urls.length > 0) {
+                for (const url of r.fotos_urls.slice(0, 5)) {
+                    html += `<img src="${url}" alt="Foto" class="img-thumbnail me-1" style="max-width:48px;max-height:48px;object-fit:cover;">`;
+                }
+            } else {
+                html += `<span class="text-muted"><i class="bi bi-image"></i> Sin foto</span>`;
+            }
+            html += `</td>
+                <td>
+                    <a href="${r.url_pdf}" class="btn btn-sm btn-success me-1" title="Ver PDF" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Ver PDF</a>
+<a href="${r.url_editar}" class="btn btn-sm btn-warning me-1" title="Editar"><i class="bi bi-pencil"></i> Editar</a>
+<a href="/reportes/borrar/${r.id}/" class="btn btn-sm btn-danger" title="Borrar" onclick="return confirm('¿Estás seguro de que deseas borrar este reporte?');"><i class="bi bi-trash"></i> Borrar</a>
+                </td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        // Agrega filtros por número de reporte y fecha
+const filtrosHtml = `
+<div class="row mb-3">
+  <div class="col-md-3">
+    <input type="number" id="filtro-numero" class="form-control" placeholder="Filtrar por N° de reporte">
+  </div>
+  <div class="col-md-3">
+    <input type="date" id="filtro-fecha" class="form-control" placeholder="Filtrar por fecha">
+  </div>
+</div>`;
+tablaReportesContainer.innerHTML = filtrosHtml + html;
+
+// Lógica de filtrado
+const inputNumero = document.getElementById('filtro-numero');
+const inputFecha = document.getElementById('filtro-fecha');
+const table = tablaReportesContainer.querySelector('table');
+
+function aplicarFiltros() {
+  const num = inputNumero.value;
+  const fecha = inputFecha.value;
+  for (const row of table.tBodies[0].rows) {
+    let mostrar = true;
+    if (num) {
+      mostrar = mostrar && row.cells[0].textContent.trim() === num;
+    }
+    if (fecha) {
+      mostrar = mostrar && row.cells[1].textContent.trim() === fecha;
+    }
+    row.style.display = mostrar ? '' : 'none';
+  }
+}
+inputNumero.addEventListener('input', aplicarFiltros);
+inputFecha.addEventListener('input', aplicarFiltros);
+    }
+
+    // Función para mostrar el estado de carga
+    function mostrarCarga() {
+        tablaReportesContainer.innerHTML = '<div class="text-center my-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando reportes...</p></div>';
+    }
+
+    // Función para cargar reportes por tipo
+    function cargarReportesPorTipo(tipo) {
+        if (!tipo) return;
+        
+        console.log('Cargando reportes para tipo:', tipo);
+        
+        // Mostrar estado de carga
+        mostrarCarga();
+        
+        // Configurar el botón de crear
+        btnCrear.disabled = false;
+        textoBtnCrear.textContent = `CREAR ${tipo}`;
+        
+        // Guardar el tipo de formulario seleccionado
+        tipoFormularioSeleccionado = tipo;
+        
+        // Construir la URL de la API de manera absoluta
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}/reportes/api/reportes_por_tipo/?proyecto_id=${proyectoId}&tipo_formulario=${encodeURIComponent(tipo)}`;
+        console.log('URL de la API:', url);
+        
+        // Hacer la petición AJAX
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Respuesta recibida, estado:', response.status);
+            if (!response.ok) {
+                return response.json().then(err => {
+                    console.error('Error en la respuesta:', err);
+                    throw new Error(err.error || 'Error en la respuesta del servidor');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            if (!data.reportes) {
+                console.error('No se encontró la propiedad reportes en la respuesta:', data);
+                throw new Error('Formato de respuesta inesperado');
+            }
+            renderTablaReportes(data.reportes);
+        })
+        .catch(error => {
+            console.error('Error al cargar reportes:', error);
+            mostrarError(`Error al cargar los reportes: ${error.message || 'Intente nuevamente'}`);
+        });
+    }
+    
+    // Función para mostrar mensajes de error
+    function mostrarError(mensaje) {
+        tablaReportesContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${mensaje}
+                <button class="btn btn-sm btn-outline-secondary ms-3" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                </button>
+            </div>`;
+    }
+    
+    // Función para cargar reportes por tipo
+    function cargarReportesPorTipo(tipo) {
+        mostrarCarga();
+        
+        const url = `/reportes/api/reportes_por_tipo/?proyecto_id=${proyectoId}&tipo_formulario=${encodeURIComponent(tipo)}`;
+        console.log('Solicitando URL:', url);
+        
+        fetch(url, {
+            credentials: 'same-origin',  // Incluir credenciales (cookies) en la solicitud
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => {
+            console.log('Respuesta recibida. Estado:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Error en la respuesta:', text);
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            // Asegurarnos de que data.reportes existe y es un array
+            const reportes = data.reportes || [];
+            renderTablaReportes(reportes);
+        })
+        .catch(error => {
+            console.error('Error al cargar reportes:', error);
+            mostrarError('Error al cargar los reportes. ' + (error.message || 'Por favor, intente nuevamente.'));
+            // Restablecer el botón de crear
+            btnCrear.disabled = true;
+            textoBtnCrear.textContent = 'SELECCIONE UN FORMULARIO';
+        });
+    }
+
+    // Maneja clic en botones de tipo de formulario
+    document.querySelectorAll('.formulario-card[data-formulario]').forEach(card => {
+        card.addEventListener('click', function(event) {
+            // Prevenir múltiples clics en el mismo formulario
+            if (this.classList.contains('active')) {
+                return;
+            }
+            
+            const tipo = this.getAttribute('data-formulario');
+            
+            // Remover clase de tarjeta activa de todas las tarjetas
+            document.querySelectorAll('.formulario-card').forEach(c => {
+                c.classList.remove('active');
+            });
+            
+            // Agregar clase a la tarjeta clickeada
+            this.classList.add('active');
+            
+            // Actualizar el botón de crear
+            tipoFormularioSeleccionado = tipo;
+            btnCrear.disabled = false;
+            
+            // Formatear el nombre del tipo para mostrarlo en el botón
+            let nombreTipo = tipo;
+            if (tipo.length > 15) {
+                // Acortar nombres largos
+                const palabras = tipo.split(' ');
+                if (palabras.length > 2) {
+                    nombreTipo = palabras.map(p => p[0]).join('');
+                } else {
+                    nombreTipo = palabras[0];
+                }
+            }
+            textoBtnCrear.textContent = `NUEVO ${nombreTipo.toUpperCase()}`;
+            
+            // Animar el botón de crear
+            btnCrear.classList.remove('boton-verde-bounce');
+            void btnCrear.offsetWidth; // Trigger reflow
+            btnCrear.classList.add('boton-verde-bounce');
+            setTimeout(() => {
+                btnCrear.classList.remove('boton-verde-bounce');
+            }, 2000);
+            
+            // Cargar los reportes del tipo seleccionado
+            cargarReportesPorTipo(tipo);
+        });
+    });
+
+    // Acción del botón crear
+    btnCrear.onclick = function() {
+        if (!tipoFormularioSeleccionado) return;
+        const url = `{% url 'reportes:crear_reporte' %}?proyecto=${proyectoId}&tipo_formulario=${encodeURIComponent(tipoFormularioSeleccionado)}`;
+        window.location.href = url;
+    };
+});
+</script>
+{% if abrir_pdf_id %}
+    <script>
+        window.onload = function() {
+            window.open("{% url 'reporte_pdf' abrir_pdf_id %}", '_blank');
+            // Opcional: puedes limpiar la variable de sesión con una petición AJAX si lo deseas
+        };
+    </script>
+{% endif %}
+{% endblock %}

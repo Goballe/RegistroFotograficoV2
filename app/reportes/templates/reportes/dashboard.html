@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Mis Proyectos{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Mis Proyectos</h2>
+    {% if proyectos %}
+        <div class="row">
+            {% for proyecto in proyectos %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if proyecto.imagen %}
+                            <img src="{{ proyecto.imagen.url }}" class="card-img-top" alt="Imagen del proyecto" style="height: 180px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
+                                <i class="bi bi-image text-secondary" style="font-size: 3rem;"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ proyecto.nombre }}</h5>
+                            <p class="card-text">{{ proyecto.descripcion|default:'Sin descripción' }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <a href="{% url 'reportes:proyecto_detalle' proyecto.id %}" class="btn btn-outline-primary w-100">Acceder a proyecto</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">No tienes proyectos asignados.</div>
+    {% endif %}
+</div>
+{% endblock %}

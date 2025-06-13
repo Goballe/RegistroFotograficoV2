@@ -20,8 +20,11 @@ RUN apt-get update && apt-get install -y \
 
 # Copiar requirements e instalar dependencias de Python
 COPY requirements.txt /code/
+# Fuerza la desinstalación de posibles versiones previas y reinstala limpio
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip uninstall -y weasyprint pydyf tinycss2 cssselect2 Pillow Pyphen cffi fonttools html5lib || true && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir "WeasyPrint==60.0" "pydyf>=0.8.0"
 
 # Copiar el proyecto
 COPY . /code/

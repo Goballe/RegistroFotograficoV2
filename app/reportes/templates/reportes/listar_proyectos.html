@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Listado de Proyectos - Registro Fotográfico{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Listado de Proyectos</h1>
+        <div>
+            <a href="{% url 'reportes:dashboard' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Volver al Dashboard
+            </a>
+            <a href="{% url 'reportes:crear_proyecto' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nuevo Proyecto
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            {% if proyectos %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Cliente</th>
+                                <th>Inicio Supervisión</th>
+                                <th>Reportes</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proyecto in proyectos %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if proyecto.imagen %}
+                                            <img src="{{ proyecto.imagen.url }}" alt="{{ proyecto.nombre }}" class="rounded-circle me-2" width="40" height="40">
+                                        {% else %}
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-folder text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ proyecto.nombre }}</strong>
+                                            {% if proyecto.descripcion %}
+                                                <div class="text-muted small text-truncate" style="max-width: 200px;" title="{{ proyecto.descripcion }}">
+                                                    {{ proyecto.descripcion|truncatechars:50 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ proyecto.codigo_proyecto|default:"N/A" }}</td>
+                                <td>{{ proyecto.cliente|default:"N/A" }}</td>
+                                <td>{{ proyecto.inicio_supervision|date:"d/m/Y"|default:"No especificado" }}</td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        {{ proyecto.reportes.count }} reporte{{ proyecto.reportes.count|pluralize }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'reportes:proyecto_detalle' proyecto.id %}" class="btn btn-sm btn-info" title="Ver reportes">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'reportes:editar_proyecto' proyecto.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#eliminarModal{{ proyecto.id }}" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal de confirmación para eliminar -->
+                                    <div class="modal fade" id="eliminarModal{{ proyecto.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>¿Estás seguro de que deseas eliminar el proyecto "{{ proyecto.nombre }}"?</p>
+                                                    <p class="text-danger">Esta acción no se puede deshacer y se eliminarán todos los reportes asociados.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form action="{% url 'reportes:eliminar_proyecto' proyecto.id %}" method="post" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-folder-open fa-4x text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-3">No hay proyectos registrados</h5>
+                    <p class="text-muted">Comienza creando un nuevo proyecto para organizar tus reportes fotográficos.</p>
+                    <a href="{% url 'reportes:crear_proyecto' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Crear Proyecto
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables -->
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap5.min.js' %}"></script>
+<script>
+// Inicializar DataTable
+$(document).ready(function() {
+    if ($('#dataTable').length) {
+        $('#dataTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'
+            },
+            order: [[0, 'asc']],
+            responsive: true,
+            columnDefs: [
+                { orderable: false, targets: -1 } // Deshabilitar ordenación en la columna de acciones
+            ]
+        });
+    }
+});
+</script>
+{% endblock %}

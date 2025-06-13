@@ -2,43 +2,7 @@
 {% load static %}
 {% load widget_tweaks %}
 
-{% block title %}Crear Reporte Fotográfico{% endblock %}
-
-{% block extra_css %}
-<style>
-    .foto-formset {
-        margin-bottom: 20px;
-    }
-    .foto-item {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 15px;
-        position: relative;
-    }
-    .delete-foto {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        color: #dc3545;
-        cursor: pointer;
-    }
-    .add-foto {
-        margin-top: 10px;
-    }
-    .preview-image {
-        max-width: 100px;
-        max-height: 100px;
-        margin-top: 10px;
-        display: none;
-        object-fit: cover;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        padding: 2px;
-    }
-</style>
-{% endblock %}
+{% block title %}{% if edit_mode %}Editar Reporte Fotográfico{% else %}Nuevo Reporte Fotográfico{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -46,111 +10,174 @@
         <div class="col-lg-10">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Crear Reporte Fotográfico</h4>
+                    <h4 class="mb-0">
+                        <i class="fas fa-camera me-2"></i>
+                        {% if edit_mode %}Editar{% else %}Nuevo{% endif %} Reporte Fotográfico
+                    </h4>
                 </div>
+                
                 <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data" id="reporteForm">
+                    {% if form.errors or foto_formset.errors %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Por favor corrija los siguientes errores:
+                        <ul class="mb-0 mt-2">
+                            {% for field in form %}
+                                {% if field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+                                {% endif %}
+                            {% endfor %}
+                            {{ form.non_field_errors }}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                         {% csrf_token %}
-                        <div class="row g-3">
-            <div class="col-md-6">
-              <label for="id_proyecto" class="form-label">Proyecto</label>
-              {{ form.proyecto|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_cliente" class="form-label">Cliente</label>
-              {{ form.cliente|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_contratista" class="form-label">Contratista</label>
-              {{ form.contratista|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_codigo_proyecto" class="form-label">Código del proyecto</label>
-              {{ form.codigo_proyecto|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_version_reporte" class="form-label">Versión del reporte</label>
-              {{ form.version_reporte|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_fecha_emision" class="form-label">Fecha de emisión</label>
-              {{ form.fecha_emision|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_elaborado_por" class="form-label">Elaborado por</label>
-              {{ form.elaborado_por|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_revisado_por" class="form-label">Revisado por</label>
-              {{ form.revisado_por|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_inicio_supervision" class="form-label">Inicio de la Supervisión</label>
-              {{ form.inicio_supervision|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_mes_actual_obra" class="form-label">Mes Actual de Obra</label>
-              {{ form.mes_actual_obra|add_class:'form-control' }}
-            </div>
-            <div class="col-md-6">
-              <label for="id_reporte_numero" class="form-label">Reporte N°</label>
-              {{ form.reporte_numero|add_class:'form-control' }}
-            </div>
+                        
+                        <!-- Información General -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Información General
+                            </h5>
+                            
+                            <div class="row g-3">
+                                <!-- Campos ocultos -->
+                                {{ form.proyecto }}
+                                {{ form.tipo_formulario }}
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.fecha_emision.id_for_label }}" class="form-label">Fecha de Emisión</label>
+                                    {{ form.fecha_emision|add_class:"form-control"|attr:"type:date" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.reporte_numero.id_for_label }}" class="form-label">N° de Reporte</label>
+                                    <input type="text" 
+                                           name="reporte_numero" 
+                                           id="reporte_numero_input" 
+                                           class="form-control" 
+                                           pattern="\d*" 
+                                           title="Solo se permiten números"
+                                           inputmode="numeric"
+                                           {% if form.reporte_numero.value %}value="{{ form.reporte_numero.value }}"{% endif %}>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.version_reporte.id_for_label }}" class="form-label">Versión</label>
+                                    <input type="text" 
+                                           name="version_reporte" 
+                                           id="version_reporte_input" 
+                                           class="form-control" 
+                                           pattern="\d*" 
+                                           title="Solo se permiten números"
+                                           inputmode="numeric"
+                                           {% if form.version_reporte.value %}value="{{ form.version_reporte.value }}"{% endif %}>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.cliente.id_for_label }}" class="form-label">Cliente</label>
+                                    {{ form.cliente|add_class:"form-control"|attr:"readonly" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.contratista.id_for_label }}" class="form-label">Contratista</label>
+                                    {{ form.contratista|add_class:"form-control"|attr:"readonly" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.codigo_proyecto.id_for_label }}" class="form-label">Código de Proyecto</label>
+                                    {{ form.codigo_proyecto|add_class:"form-control"|attr:"readonly" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.elaborado_por.id_for_label }}" class="form-label">Elaborado por</label>
+                                    {{ form.elaborado_por|add_class:"form-control" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.revisado_por.id_for_label }}" class="form-label">Revisado por</label>
+                                    {{ form.revisado_por|add_class:"form-control" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.inicio_supervision.id_for_label }}" class="form-label">Inicio de Supervisión</label>
+                                    {{ form.inicio_supervision|add_class:"form-control"|attr:"type:date" }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="{{ form.mes_actual_obra.id_for_label }}" class="form-label">Mes Actual de Obra</label>
+                                    {{ form.mes_actual_obra|add_class:"form-control"|attr:"type:number" }}
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                                    {{ form.descripcion|add_class:"form-control"|attr:"rows:3" }}
+                                    <div class="form-text">Descripción detallada del reporte.</div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <!-- Sección de Fotos -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <h5>Fotografías</h5>
-                                {{ foto_formset.management_form }}
-                                <div id="fotos-container">
-                                    {% for form in foto_formset %}
-                                    <div class="foto-item">
-                                        <div class="row">
-                                            <div class="col-md-8">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Imagen</label>
-                                                    {{ form.imagen|add_class:'form-control' }}
-                                                    <img src="#" class="preview-image" alt="Vista previa">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Descripción (opcional)</label>
-                                                    {{ form.descripcion|add_class:'form-control' }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% if foto_formset.can_delete %}
-                                            {{ form.DELETE|add_class:'d-none' }}
-                                            <span class="delete-foto" onclick="removeFoto(this)">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </span>
-                                        {% endif %}
-                                        {{ form.id }}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                <button type="button" class="btn btn-outline-primary add-foto" id="add-foto">
-                                    <i class="fas fa-plus"></i> Añadir otra foto
+                        <!-- Sección de Fotografías -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-images me-2"></i>Fotografías
+                                </h5>
+                                <button type="button" class="btn btn-primary btn-sm" id="add-photo">
+                                    <i class="fas fa-plus me-1"></i> Agregar Foto
                                 </button>
                             </div>
-                        </div>
-                        
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <label for="id_descripcion" class="form-label">Descripción General</label>
-                                {{ form.descripcion|add_class:'form-control' }}
+                            
+                            {{ foto_formset.management_form }}
+                            <div id="photo-forms">
+                                {% for form in foto_formset %}
+                                <div class="photo-form mb-4 p-3 border rounded">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="photo-upload-area border-2 border-dashed rounded p-4 text-center">
+                                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-2"></i>
+                                                <p class="mb-1">Arrastra una imagen o haz clic para seleccionar</p>
+                                                <p class="small text-muted mb-0">Formatos: JPG, PNG (Máx. 5MB)</p>
+                                                {{ form.imagen|add_class:"d-none" }}
+                                                <img src="#" class="img-thumbnail mt-2 d-none" style="max-height: 200px;">
+                                            </div>
+                                            {% if form.instance.imagen %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Imagen actual:</small>
+                                                <a href="{{ form.instance.imagen.url }}" target="_blank" class="d-block">
+                                                    {{ form.instance.imagen.name|slice:'::' }}
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                                                {{ form.descripcion|add_class:"form-control"|attr:"placeholder:Describa la fotografía..." }}
+                                            </div>
+                                            <button type="button" class="btn btn-danger btn-sm remove-photo">
+                                                <i class="fas fa-trash me-1"></i> Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {{ form.id }}
+                                    {{ form.DELETE|add_class:"d-none" }}
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                         
-                        <div class="mt-4 d-flex justify-content-between">
-                            <a href="{% url 'lista_reportes' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i> Volver a la lista
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% if edit_mode %}{% url 'reportes:proyecto_detalle' reporte.proyecto.id %}{% else %}{% url 'reportes:proyecto_detalle' proyecto.id %}{% endif %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Guardar Reporte
-                            </button>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Guardar
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -160,188 +187,185 @@
 </div>
 
 <!-- Plantilla para nuevos formularios de fotos -->
-<div id="empty-form" style="display: none;">
-    <div class="foto-item">
-        <div class="row">
-            <div class="col-md-8">
-                <div class="mb-3">
-                    <label class="form-label">Imagen</label>
-                    {{ foto_formset.empty_form.imagen|add_class:'form-control' }}
-                    <img src="#" class="preview-image" alt="Vista previa">
+<template id="photo-form-template">
+    <div class="photo-form mb-4 p-3 border rounded">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="photo-upload-area border-2 border-dashed rounded p-4 text-center">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-2"></i>
+                    <p class="mb-1">Arrastra una imagen o haz clic para seleccionar</p>
+                    <p class="small text-muted mb-0">Formatos: JPG, PNG (Máx. 5MB)</p>
+                    {{ foto_formset.empty_form.imagen|add_class:"d-none" }}
+                    <img src="#" class="img-thumbnail mt-2 d-none" style="max-height: 200px;">
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="mb-3">
-                    <label class="form-label">Descripción (opcional)</label>
-                    {{ foto_formset.empty_form.descripcion|add_class:'form-control' }}
+                    <label for="{{ foto_formset.empty_form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                    {{ foto_formset.empty_form.descripcion|add_class:"form-control"|attr:"placeholder:Describa la fotografía..." }}
                 </div>
+                <button type="button" class="btn btn-danger btn-sm remove-photo">
+                    <i class="fas fa-trash me-1"></i> Eliminar
+                </button>
             </div>
         </div>
-        <span class="delete-foto" onclick="removeFoto(this)">
-            <i class="fas fa-trash"></i> Eliminar
-        </span>
-        {{ foto_formset.empty_form.id }}
+        {{ foto_formset.empty_form.DELETE|add_class:"d-none" }}
     </div>
-</div>
+</template>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Configurar el formulario dinámico de fotos
-    const formsetContainer = document.getElementById('fotos-container');
-    const addButton = document.getElementById('add-foto');
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    const addPhotoBtn = document.getElementById('add-photo');
+    const photoForms = document.getElementById('photo-forms');
+    const template = document.getElementById('photo-form-template');
     const totalForms = document.getElementById('id_fotos-TOTAL_FORMS');
-    const emptyForm = document.getElementById('empty-form').innerHTML;
-    let formCount = formsetContainer.querySelectorAll('.foto-item').length;
-
-    // Función para actualizar los nombres de los campos del formulario
-    function updateFormIndices() {
-        const forms = formsetContainer.querySelectorAll('.foto-item:not([style*="display: none"])');
-        let visibleIndex = 0;
+    let formCount = parseInt(totalForms.value);
+    
+    // Función para inicializar eventos de subida de imágenes
+    function initImageUpload(container) {
+        const uploadArea = container.querySelector('.photo-upload-area');
+        const fileInput = container.querySelector('input[type="file"]');
+        const preview = container.querySelector('img');
         
-        forms.forEach((form, index) => {
-            // Actualizar los atributos 'id' y 'name' de los campos
-            const inputs = form.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                if (input.name && input.name.includes('fotos-')) {
-                    input.name = input.name.replace(/fotos-\d+-/, `fotos-${visibleIndex}-`);
-                }
-                if (input.id && input.id.includes('id_fotos-')) {
-                    input.id = input.id.replace(/id_fotos-\d+-/, `id_fotos-${visibleIndex}-`);
-                }
-            });
+        // Click en el área de subida
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // Arrastrar y soltar
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-primary');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-primary');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-primary');
             
-            // Actualizar etiquetas 'for' de los labels
-            const labels = form.querySelectorAll('label');
-            labels.forEach(label => {
-                if (label.htmlFor) {
-                    label.htmlFor = label.htmlFor.replace(/id_fotos-\d+-/, `id_fotos-${visibleIndex}-`);
-                }
-            });
-            
-            // Actualizar el botón de eliminar
-            const deleteCheckbox = form.querySelector('input[type="checkbox"][name$="-DELETE"]');
-            if (deleteCheckbox) {
-                deleteCheckbox.id = `id_fotos-${visibleIndex}-DELETE`;
-                deleteCheckbox.name = `fotos-${visibleIndex}-DELETE`;
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updatePreview(fileInput, preview, uploadArea);
             }
-            
-            visibleIndex++;
         });
         
-        // Actualizar el contador de formularios
-        totalForms.value = visibleIndex;
+        // Cambio en el input de archivo
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                updatePreview(fileInput, preview, uploadArea);
+            }
+        });
     }
-
-    // Función para eliminar un formulario de foto
-    window.removeFoto = function(button) {
-        const formItem = button.closest('.foto-item');
-        const deleteCheckbox = formItem.querySelector('input[type="checkbox"][name$="-DELETE"]');
+    
+    // Actualizar vista previa de la imagen
+    function updatePreview(fileInput, preview, uploadArea) {
+        const file = fileInput.files[0];
+        const validTypes = ['image/jpeg', 'image/png'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
         
-        if (deleteCheckbox) {
-            // Si el formulario ya está guardado, marcar para eliminación
-            deleteCheckbox.checked = true;
-            formItem.style.display = 'none';
-        } else {
-            // Si es un nuevo formulario, eliminarlo directamente
-            formItem.remove();
+        // Validar tipo de archivo
+        if (!validTypes.includes(file.type)) {
+            alert('Por favor, seleccione un archivo de imagen válido (JPEG o PNG).');
+            fileInput.value = '';
+            return;
         }
-        updateFormIndices();
-    };
-
-    // Función para manejar la vista previa de imágenes
-    function setupImagePreview(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            const preview = input.closest('.foto-item').querySelector('.preview-image');
-            
-            reader.onload = function(e) {
-                // Crear una nueva imagen para redimensionar
-                const img = new Image();
-                img.onload = function() {
-                    // Crear un canvas para redimensionar
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Tamaño máximo deseado
-                    const maxWidth = 100;
-                    const maxHeight = 100;
-                    
-                    // Calcular nuevas dimensiones manteniendo la relación de aspecto
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    if (width > height) {
-                        if (width > maxWidth) {
-                            height *= maxWidth / width;
-                            width = maxWidth;
-                        }
-                    } else {
-                        if (height > maxHeight) {
-                            width *= maxHeight / height;
-                            height = maxHeight;
-                        }
-                    }
-                    
-                    // Configurar el canvas con las nuevas dimensiones
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // Dibujar la imagen redimensionada
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Establecer la imagen redimensionada como fuente de la vista previa
-                    preview.src = canvas.toDataURL('image/jpeg');
-                    preview.style.display = 'block';
-                    preview.width = width;
-                    preview.height = height;
-                };
-                
-                // Establecer la fuente de la imagen
-                img.src = e.target.result;
-            };
-            
-            reader.readAsDataURL(input.files[0]);
+        
+        // Validar tamaño del archivo
+        if (file.size > maxSize) {
+            alert('El archivo es demasiado grande. El tamaño máximo permitido es 5MB.');
+            fileInput.value = '';
+            return;
         }
+        
+        // Mostrar vista previa
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            uploadArea.querySelector('i').classList.add('d-none');
+            uploadArea.querySelector('p').classList.add('d-none');
+        };
+        reader.readAsDataURL(file);
     }
-
-    // Delegación de eventos para la vista previa de imágenes
-    formsetContainer.addEventListener('change', function(e) {
-        if (e.target && e.target.matches('input[type="file"]')) {
-            setupImagePreview(e.target);
-        }
-    });
-
-    // Agregar un nuevo formulario de foto
-    addButton.addEventListener('click', function() {
-        const newForm = document.createElement('div');
-        newForm.className = 'foto-item';
-        const newFormHtml = emptyForm.replace(/__prefix__/g, formCount);
-        newForm.innerHTML = newFormHtml;
+    
+    // Agregar nuevo formulario de foto
+    addPhotoBtn.addEventListener('click', () => {
+        const newForm = template.content.cloneNode(true);
+        const newFormElement = newForm.firstElementChild;
         
-        formsetContainer.appendChild(newForm);
+        // Actualizar índices del formulario
+        const formRegex = /fotos-(\d{1,})-/g;
+        const replacement = `fotos-${formCount}-`;
+        
+        if (newFormElement.innerHTML) {
+            newFormElement.innerHTML = newFormElement.innerHTML
+                .replace(formRegex, replacement);
+        }
+        
+        // Agregar el nuevo formulario al contenedor
+        photoForms.appendChild(newFormElement);
+        
+        // Inicializar eventos para el nuevo formulario
+        initImageUpload(newFormElement);
+        
+        // Actualizar contador de formularios
         formCount++;
-        updateFormIndices();
-        
-        // Configurar el evento de cambio para la vista previa en el nuevo formulario
-        const fileInput = newForm.querySelector('input[type="file"]');
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                setupImagePreview(this);
-            });
+        totalForms.value = formCount;
+    });
+    
+    // Eliminar formulario de foto
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-photo')) {
+            const formToRemove = e.target.closest('.photo-form');
+            const deleteInput = formToRemove.querySelector('input[name$="-DELETE"]');
+            
+            if (deleteInput) {
+                // Si es un formulario existente, marcarlo para eliminación
+                deleteInput.value = 'on';
+                formToRemove.style.display = 'none';
+            } else {
+                // Si es un nuevo formulario, eliminarlo directamente
+                formToRemove.remove();
+                // Actualizar índices de los formularios restantes
+                updateFormIndices();
+            }
         }
     });
     
-    // Configurar eventos de cambio para los inputs de archivo existentes
-    document.querySelectorAll('#fotos-container input[type="file"]').forEach(input => {
-        input.addEventListener('change', function() {
-            setupImagePreview(this);
+    // Actualizar índices de los formularios
+    function updateFormIndices() {
+        const forms = photoForms.querySelectorAll('.photo-form:not([style*="display: none"])');
+        let index = 0;
+        
+        forms.forEach((form, i) => {
+            Array.from(form.elements).forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(/fotos-\d+-/, `fotos-${i}-`);
+                    input.id = input.id.replace(/id_fotos-\d+-/, `id_fotos-${i}-`);
+                }
+            });
+            index = i;
         });
+        
+        totalForms.value = index + 1;
+    }
+    
+    // Inicializar eventos para los formularios existentes
+    document.querySelectorAll('.photo-form').forEach(form => {
+        initImageUpload(form);
     });
     
-    // Inicializar el contador de formularios
-    updateFormIndices();
+    // Asegurarse de que el campo version_reporte sea editable
+    const versionInput = document.getElementById('version_reporte_input');
+    if (versionInput) {
+        versionInput.removeAttribute('readonly');
+        versionInput.removeAttribute('disabled');
+        versionInput.classList.add('form-control');
+    }
 });
 </script>
 {% endblock %}

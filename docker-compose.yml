@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   web:
     build: .
@@ -18,7 +18,7 @@ services:
     command: bash -c "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./app:/code/app
-      - ./static:/code/staticfiles
+      - ./static:/code/staticfilesdocker-compose logs web --tail=100docker-compose logs web --tail=100
       - ./media:/code/media
     ports:
       - "0.0.0.0:8000:8000"

@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
@@ -24,23 +25,22 @@ from django.utils.translation import gettext_lazy as _
 from reportes import views as reportes_views
 
 def home(request):
-    return HttpResponse("<h1>Bienvenido al sistema de reportes fotográficos</h1>")
+    return redirect('reportes:dashboard')
 
 # Configuración de URLs de autenticación
 auth_urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    path('registro/', reportes_views.registro_usuario, name='registro'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='reportes:login'), name='logout'),
     path('perfil/', reportes_views.perfil_usuario, name='perfil_usuario'),
     path('cambiar-contrasena/', reportes_views.cambiar_contrasena, name='cambiar_contrasena'),
 ]
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('', home, name='home'),
     path('admin/', admin.site.urls),
-    path('reportes/', include('reportes.urls')),
-    path('cuenta/', include(auth_urlpatterns)),
-] 
+    path('reportes/', include(('reportes.urls', 'reportes'), namespace='reportes')),
+    path('cuenta/', include((auth_urlpatterns, 'reportes'))),
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

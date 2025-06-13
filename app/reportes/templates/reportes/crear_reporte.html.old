@@ -1,0 +1,636 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{% if edit_mode %}Editar Reporte Fotográfico{% else %}Nuevo Reporte Fotográfico{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .form-header {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .form-header h3 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #3498db;
+    }
+    
+    .form-section h5 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .btn-primary {
+        background-color: #3498db;
+        border-color: #3498db;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+    }
+    
+    /* Estilos para la sección de fotos */
+    .photo-upload-area {
+        border: 2px dashed #ced4da;
+        border-radius: 6px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+    }
+    
+    .photo-upload-area:hover {
+        border-color: #3498db;
+        background-color: #f8f9fa;
+    }
+    
+    .photo-preview {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 15px;
+        display: none;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .photo-item {
+        position: relative;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .btn-remove-photo {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    
+    .photo-description {
+        margin-top: 10px;
+    }
+    
+    .btn-add-photo {
+        margin-top: 15px;
+        background-color: #2ecc71;
+        border-color: #2ecc71;
+    }
+    
+    .btn-add-photo:hover {
+        background-color: #27ae60;
+        border-color: #27ae60;
+    }
+    
+    /* Estilos para el mensaje de arrastrar y soltar */
+    .drag-drop-message {
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    /* Estilos para móviles */
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 15px;
+        }
+        
+        .form-section {
+            padding: 15px;
+        }
+        
+        .photo-upload-area {
+            padding: 20px 10px;
+        }
+    }
+    /* Estilos para botones */
+    .btn-excel {
+        background-color: #2e7d32;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-excel:hover {
+        background-color: #1b5e20;
+    }
+    
+    .btn-pdf {
+        background-color: #d32f2f;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-pdf:hover {
+        background-color: #b71c1c;
+    }
+    
+    /* Estilos para el formulario de fotos */
+    .foto-formset {
+        margin: 30px 0;
+    }
+    
+    .foto-item {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        padding: 20px;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .preview-image {
+        max-width: 100%;
+        max-height: 250px;
+        margin-top: 15px;
+        display: none;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    .delete-foto {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="form-container">
+                <div class="form-header">
+                    <h3>
+                        <i class="fas fa-camera me-2"></i>
+                        {% if edit_mode %}Editar Reporte Fotográfico{% else %}Nuevo Reporte Fotográfico{% endif %}
+                    </h3>
+                    <p class="text-muted mb-0">Complete todos los campos requeridos para {% if edit_mode %}actualizar{% else %}crear{% endif %} el reporte fotográfico.</p>
+                </div>
+                
+                {% if form.errors or foto_formset.errors %}
+                <div class="alert alert-danger">
+                    <strong>Errores en el formulario:</strong>
+                    <ul>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error|escape }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error|escape }}</li>
+                        {% endfor %}
+                        {% for formset in foto_formset %}
+                            {% for error in formset.non_field_errors %}
+                                <li>Fotos: {{ error|escape }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <form method="POST" enctype="multipart/form-data" id="reporteForm">
+                    {% csrf_token %}
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="width: 30%;">Proyecto</td>
+                                <td>{% render_field form.proyecto class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Tipo de Formulario</td>
+                                <td>{% render_field form.tipo_formulario class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Cliente</td>
+                                <td>{% render_field form.cliente class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Contratista</td>
+                                <td>{% render_field form.contratista class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Código de Proyecto</td>
+                                <td>{% render_field form.codigo_proyecto class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Versión del Reporte</td>
+                                <td>{% render_field form.version_reporte class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Fecha de Emisión</td>
+                                <td>{% render_field form.fecha_emision type="date" class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Elaborado por</td>
+                                <td>{% render_field form.elaborado_por class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Revisado por</td>
+                                <td>{% render_field form.revisado_por class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Inicio de Supervisión</td>
+                                <td>{% render_field form.inicio_supervision type="date" class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Mes Actual de Obra</td>
+                                <td>{% render_field form.mes_actual_obra class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Número de Reporte</td>
+                                <td>{% render_field form.reporte_numero class="form-control" %}</td>
+                            </tr>
+                            <tr>
+                                <td>Descripción</td>
+                                <td>{% render_field form.descripcion class="form-control" rows="3" %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Sección de Fotos -->
+                    <div class="foto-formset">
+                        <h5 style="color: #1f497d; margin: 20px 0 10px 0;">
+                            <i class="fas fa-images me-2"></i>Fotografías
+                        </h5>
+                        {{ foto_formset.management_form }}
+                        <div id="foto-forms">
+                            {% for form in foto_formset %}
+                            <div class="foto-item">
+                                <table class="excel-table">
+                                    <tr>
+                                        <td style="width: 30%;">Imagen</td>
+                                        <td>
+                                            <div class="file-upload">
+                                                {{ form.imagen|add_class:"form-control file-input" }}
+                                                <div class="form-text">Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</div>
+                                                <img src="#" class="preview-image" alt="Vista previa" style="display: none; margin-top: 10px;">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Descripción</td>
+                                        <td>
+                                            {{ form.descripcion|add_class:"form-control" }}
+                                        </td>
+                                    </tr>
+                                    {% if form.instance.imagen %}
+                                    <tr>
+                                        <td>Vista Previa</td>
+                                        <td>
+                                            <img src="{{ form.instance.imagen.url }}" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                                <button type="button" class="btn btn-sm btn-danger delete-foto" onclick="removeFoto(this)">
+                                    <i class="fas fa-trash me-1"></i> Eliminar
+                                </button>
+                                {{ form.id }}
+                                {{ form.DELETE }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn-excel add-foto" id="add-foto" style="margin-top: 15px;">
+                            <i class="fas fa-plus me-1"></i> Agregar Foto
+                        </button>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="form-actions d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-success flex-grow-1 flex-md-grow-0">
+                            <i class="fas fa-save me-2"></i> {% if edit_mode %}Guardar Cambios{% else %}Guardar Reporte{% endif %}
+                        </button>
+                        <a href="{% if edit_mode %}{% url 'reportes:proyecto_detalle' reporte.proyecto.id %}{% else %}{% url 'reportes:dashboard' %}{% endif %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </a>
+                        {% if edit_mode %}
+                        <a href="{% url 'reportes:reporte_pdf' reporte.id %}" class="btn btn-danger flex-grow-1 flex-md-grow-0" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i> Generar PDF
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plantilla para nuevos formularios de fotos -->
+<div id="empty-form" style="display: none;">
+    <div class="foto-item">
+        <table class="excel-table">
+            <tr>
+                <td style="width: 30%;">Imagen</td>
+                <td>
+                    <div class="file-upload">
+                        <input type="file" name="fotos-__prefix__-imagen" id="id_fotos-__prefix__-imagen" class="form-control" onchange="setupImagePreview(this)">
+                        <div class="form-text">Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</div>
+                        <img src="#" class="preview-image" alt="Vista previa" style="display: none; margin-top: 10px;">
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Descripción</td>
+                <td>
+                    <input type="text" name="fotos-__prefix__-descripcion" id="id_fotos-__prefix__-descripcion" class="form-control">
+                </td>
+            </tr>
+        </table>
+        <button type="button" class="btn btn-sm btn-danger delete-foto" onclick="removeFoto(this)">
+            <i class="fas fa-trash me-1"></i> Eliminar
+        </button>
+        {{ foto_formset.empty_form.id }}
+        {{ foto_formset.empty_form.DELETE }}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function() {
+    console.log('Documento listo');
+    
+    // Función para mostrar vista previa de la imagen
+    function setupImagePreview(input) {
+        console.log('setupImagePreview llamado');
+        if (!input || !input.files || !input.files[0]) {
+            console.log('No hay archivo seleccionado');
+            return;
+        }
+        
+        const preview = $(input).siblings('img.preview-image');
+        if (preview.length === 0) {
+            console.error('No se encontró el elemento de vista previa');
+            return;
+        }
+        
+        const file = input.files[0];
+        const fileSize = file.size / 1024 / 1024; // Convertir a MB
+        
+        // Validar tamaño máximo de archivo (5MB)
+        if (fileSize > 5) {
+            alert('El archivo es demasiado grande. El tamaño máximo permitido es 5MB.');
+            $(input).val('');
+            return;
+        }
+        
+        // Validar tipo de archivo
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            alert('Formato de archivo no válido. Solo se permiten imágenes JPG, PNG o GIF.');
+            $(input).val('');
+            return;
+        }
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            console.log('Imagen cargada, mostrando vista previa');
+            preview.attr('src', e.target.result);
+            preview.show();
+            
+            // Mostrar la vista previa en lugar del input de archivo
+            $(input).hide();
+            preview.after(
+                $('<button type="button" class="btn btn-sm btn-outline-secondary mt-2 cambiar-imagen">' +
+                  '<i class="fas fa-sync-alt me-1"></i> Cambiar imagen</button>')
+            );
+        };
+        
+        reader.onerror = function() {
+            console.error('Error al leer el archivo');
+            alert('Error al cargar la imagen. Por favor, intente nuevamente.');
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    // Función para agregar un nuevo formulario de foto
+    function addNewForm() {
+        console.log('Agregando nuevo formulario');
+        
+        // Obtener el número total de formularios actual
+        const totalForms = $('#id_fotos-TOTAL_FORMS');
+        const formIdx = parseInt(totalForms.val());
+        
+        console.log('Índice del nuevo formulario:', formIdx);
+        
+        // Obtener la plantilla del formulario vacío
+        const emptyForm = $('#empty-form').html();
+        if (!emptyForm) {
+            console.error('No se encontró la plantilla de formulario vacío');
+            return;
+        }
+        
+        // Reemplazar los placeholders en la plantilla
+        const newFormHtml = emptyForm.replace(/__prefix__/g, formIdx);
+        
+        // Crear el nuevo elemento de formulario
+        const newForm = $(newFormHtml);
+        
+        // Agregar el nuevo formulario al contenedor
+        $('#foto-forms').append(newForm);
+        
+        // Actualizar el contador de formularios
+        totalForms.val(formIdx + 1);
+        
+        // Configurar el evento de cambio para el nuevo input de archivo
+        const fileInput = newForm.find('input[type="file"]');
+        fileInput.on('change', function() {
+            setupImagePreview(this);
+        });
+        
+        // Configurar el botón de eliminar
+        newForm.find('.delete-foto').on('click', function() {
+            removeFoto(this);
+        });
+        
+        // Desplazarse al nuevo formulario
+        $('html, body').animate({
+            scrollTop: newForm.offset().top - 20
+        }, 500);
+        
+        console.log('Nuevo formulario agregado');
+    }
+    
+    // Función para eliminar un formulario de foto
+    function removeFoto(button) {
+        console.log('Eliminando formulario');
+        const formItem = $(button).closest('.foto-item');
+        const deleteCheckbox = formItem.find('input[name$="-DELETE"]');
+        
+        if (deleteCheckbox.length) {
+            // Si el formulario ya está guardado, marcarlo para eliminación
+            deleteCheckbox.val('on');
+            formItem.hide();
+            console.log('Formulario oculto (marcado para eliminación)');
+        } else {
+            // Si es un nuevo formulario, eliminarlo directamente
+            formItem.remove();
+            console.log('Formulario eliminado');
+        }
+        
+        // Actualizar los índices de los formularios restantes
+        updateFormIndices();
+    }
+    
+    // Función para actualizar los índices de los formularios
+    function updateFormIndices() {
+        let formCount = 0;
+        
+        $('.foto-item:visible').each(function(index) {
+            const formItem = $(this);
+            
+            // Actualizar índices en los campos del formulario
+            formItem.find('input, textarea, select').each(function() {
+                const $field = $(this);
+                const name = $field.attr('name');
+                const id = $field.attr('id');
+                
+                if (name) {
+                    $field.attr('name', name.replace(/fotos-\d+-/, 'fotos-' + formCount + '-'));
+                }
+                
+                if (id) {
+                    $field.attr('id', id.replace(/id_fotos-\d+-/, 'id_fotos-' + formCount + '-'));
+                }
+            });
+            
+            formCount++;
+        });
+        
+        // Actualizar el contador total de formularios
+        $('#id_fotos-TOTAL_FORMS').val(formCount);
+    }
+    
+    // Delegación de eventos para el botón de cambiar imagen
+    $(document).on('click', '.cambiar-imagen', function() {
+        const fileInput = $(this).siblings('input[type="file"]');
+        fileInput.val('').show();
+        $(this).siblings('img.preview-image').hide();
+        $(this).remove();
+        fileInput.trigger('click');
+    });
+    
+    // Inicializar eventos para los formularios existentes
+    function initExistingForms() {
+        console.log('Inicializando formularios existentes');
+        
+        // Configurar el botón de agregar foto
+        $('#add-foto').off('click').on('click', addNewForm);
+        
+        // Configurar la vista previa para los inputs de archivo existentes
+        $('.file-upload input[type="file"]').each(function() {
+            const $input = $(this);
+            
+            // Si ya hay un archivo seleccionado, mostrar la vista previa
+            if (this.files && this.files[0]) {
+                setupImagePreview(this);
+            }
+            
+            // Configurar el evento change
+            $input.off('change').on('change', function() {
+                setupImagePreview(this);
+            });
+        });
+        
+        // Configurar botones de eliminar para formularios existentes
+        $('.delete-foto').off('click').on('click', function() {
+            removeFoto(this);
+        });
+        
+        console.log('Formularios existentes inicializados');
+    }
+    
+    // Inicializar todo cuando el documento esté listo
+    initExistingForms();
+    
+    // Hacer que las funciones estén disponibles globalmente
+    window.addNewForm = addNewForm;
+    window.removeFoto = removeFoto;
+    
+    console.log('Inicialización completada');
+});
+//]]>
+</script>
+{% endblock %}
