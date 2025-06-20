@@ -56,6 +56,30 @@ def puede_revisar_s(user):
     return es_editor(user)
 
 
+def _crear_notificaciones_para_editores(mensaje, url):
+    """Crea notificaciones para todos los usuarios con rol de editor."""
+    from django.contrib.auth import get_user_model
+    from .models import Notificacion
+    
+    # Obtener directamente los usuarios que pertenecen al grupo 'editores'
+    try:
+        UserModel = get_user_model()
+        editores = UserModel.objects.filter(groups__name='editores', is_active=True)
+        
+        # Crear notificación para cada editor
+        for editor in editores:
+            Notificacion.objects.create(
+                usuario=editor,
+                mensaje=mensaje,
+                url=url,
+                leida=False
+            )
+    except Exception as e:
+        # Registrar el error pero continuar
+        print(f"Error al crear notificaciones para editores: {str(e)}")
+        pass
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class GetRandomTableView(View):
     """
@@ -350,6 +374,19 @@ class CrearLevantamientoCalidadView(LoginRequiredMixin, UserPassesTestMixin, Vie
 
     def post(self, request, *args, **kwargs):
         observacion = self.get_observacion()
+        
+        # Verificar si ya existe un levantamiento para esta observación
+        if hasattr(observacion, 'levantamiento'):
+            # Si el levantamiento fue rechazado, permitir crear uno nuevo
+            if observacion.levantamiento.estado == 'Rechazado':
+                # Eliminar el levantamiento anterior
+                levantamiento_anterior = observacion.levantamiento
+                levantamiento_anterior.delete()
+                messages.info(request, 'El levantamiento anterior fue rechazado. Se creará uno nuevo.')
+            else:
+                messages.warning(request, 'Esta observación ya tiene un levantamiento registrado.')
+                return redirect('obervaciones:ver_observacion', proyecto_id=observacion.proyecto.id, observacion_id=observacion.id)
+        
         form = LevantamientoCalidadForm(request.POST, request.FILES)
         if form.is_valid():
             lev = form.save(commit=False)
@@ -368,15 +405,19 @@ class CrearLevantamientoCalidadView(LoginRequiredMixin, UserPassesTestMixin, Vie
             tiempo_formato = f"{diferencia_dias:02d}:00:00"
             lev.tiempo_levantamiento = tiempo_formato
             
-            lev.save()
-
-            # notificar a editores
-            url = reverse('obervaciones:revisar_levantamiento_calidad', kwargs={'proyecto_id': observacion.proyecto.id, 'levantamiento_id': lev.id})
-            mensaje = f'Nuevo levantamiento pendiente de revisión para la observación {observacion.item}'
-            _crear_notificaciones_para_editores(mensaje, url)
-
-            messages.success(request, 'Levantamiento enviado correctamente.')
-            return redirect('obervaciones:lista_observaciones', proyecto_id=observacion.proyecto.id)
+            try:
+                lev.save()
+                
+                # notificar a editores
+                url = reverse('obervaciones:revisar_levantamiento_calidad', kwargs={'proyecto_id': observacion.proyecto.id, 'levantamiento_id': lev.id})
+                mensaje = f'Nuevo levantamiento pendiente de revisión para la observación {observacion.item}'
+                _crear_notificaciones_para_editores(mensaje, url)
+                
+                messages.success(request, 'Levantamiento enviado correctamente.')
+                return redirect('obervaciones:lista_observaciones', proyecto_id=observacion.proyecto.id)
+            except Exception as e:
+                messages.error(request, f'Error al guardar el levantamiento: {str(e)}')
+                
         return render(request, 'obervaciones/levantamiento_form.html', {
             'form': form,
             'proyecto': observacion.proyecto,

@@ -1,0 +1,23 @@
+{% if errors %}
+    <p class="errorlist">
+        {% for error in errors %}
+            {{ error }}{% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+    </p>
+{% endif %}
+{% for field in fields %}
+    <p>
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}
+            <span class="helptext">{{ field.help_text }}</span>
+        {% endif %}
+        {% if field.errors %}
+            <span class="errorlist">
+                {% for error in field.errors %}
+                    {{ error }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+            </span>
+        {% endif %}
+    </p>
+{% endfor %}

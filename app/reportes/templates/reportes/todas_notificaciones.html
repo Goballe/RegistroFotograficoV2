@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Todas las Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Todas las Notificaciones</h1>
+                <button id="marcar-todas-leidas-btn" class="btn btn-outline-primary">
+                    <i class="fas fa-check-double me-2"></i> Marcar todas como leídas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Observaciones Pendientes -->
+            {% if observaciones_calidad.count > 0 or observaciones_ssoma.count > 0 %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Observaciones Pendientes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for obs in observaciones_calidad %}
+                        <a href="{% url 'obervaciones:detalle_observacion_calidad' obs.id %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-danger rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-clipboard-check text-white" style="font-size: 1.2rem;"></i>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-1">Observación de Calidad Pendiente</h6>
+                                <p class="mb-1">{{ obs.descripcion|truncatechars:100 }}</p>
+                                <small class="text-muted">{{ obs.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        
+                        {% for obs in observaciones_ssoma %}
+                        <a href="{% url 'obervaciones:detalle_observacion_ssoma' obs.id %}" class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-hard-hat text-white" style="font-size: 1.2rem;"></i>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-1">Observación SSOMA Pendiente</h6>
+                                <p class="mb-1">{{ obs.descripcion|truncatechars:100 }}</p>
+                                <small class="text-muted">{{ obs.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notificaciones -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2" style="color: #62162c;"></i>
+                        Notificaciones
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if notificaciones %}
+                        <div class="list-group list-group-flush">
+                            <!-- Hoy -->
+                            <div class="list-group-item bg-light">
+                                <h6 class="mb-0 text-muted">Hoy</h6>
+                            </div>
+                            {% for notif in notificaciones %}
+                                {% if notif.creada_en.date == hoy %}
+                                <a href="{{ notif.url }}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if not notif.leida %}fw-bold{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="{% if not notif.leida %}bg-primary{% else %}bg-secondary{% endif %} rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-bell text-white" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <p class="mb-1">{{ notif.mensaje }}</p>
+                                        <small class="text-muted">{{ notif.creada_en|date:"H:i" }}</small>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Ayer -->
+                            <div class="list-group-item bg-light">
+                                <h6 class="mb-0 text-muted">Ayer</h6>
+                            </div>
+                            {% for notif in notificaciones %}
+                                {% if notif.creada_en.date == ayer %}
+                                <a href="{{ notif.url }}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if not notif.leida %}fw-bold{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="{% if not notif.leida %}bg-primary{% else %}bg-secondary{% endif %} rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-bell text-white" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <p class="mb-1">{{ notif.mensaje }}</p>
+                                        <small class="text-muted">{{ notif.creada_en|date:"H:i" }}</small>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Semana pasada -->
+                            <div class="list-group-item bg-light">
+                                <h6 class="mb-0 text-muted">Esta semana</h6>
+                            </div>
+                            {% for notif in notificaciones %}
+                                {% if notif.creada_en.date > semana_pasada and notif.creada_en.date < ayer %}
+                                <a href="{{ notif.url }}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if not notif.leida %}fw-bold{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="{% if not notif.leida %}bg-primary{% else %}bg-secondary{% endif %} rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-bell text-white" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <p class="mb-1">{{ notif.mensaje }}</p>
+                                        <small class="text-muted">{{ notif.creada_en|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Anteriores -->
+                            <div class="list-group-item bg-light">
+                                <h6 class="mb-0 text-muted">Anteriores</h6>
+                            </div>
+                            {% for notif in notificaciones %}
+                                {% if notif.creada_en.date <= semana_pasada %}
+                                <a href="{{ notif.url }}" class="list-group-item list-group-item-action d-flex align-items-center py-3 {% if not notif.leida %}fw-bold{% endif %}">
+                                    <div class="flex-shrink-0">
+                                        <div class="{% if not notif.leida %}bg-primary{% else %}bg-secondary{% endif %} rounded-circle p-2" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-bell text-white" style="font-size: 1.2rem;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <p class="mb-1">{{ notif.mensaje }}</p>
+                                        <small class="text-muted">{{ notif.creada_en|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash text-muted mb-3" style="font-size: 3rem;"></i>
+                            <p class="text-muted">No tienes notificaciones</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>En esta sección puedes ver todas tus notificaciones y observaciones pendientes.</p>
+                    <p>Las notificaciones se marcan automáticamente como leídas cuando las visitas.</p>
+                    <hr>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary rounded-circle p-2 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-bell text-white" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <div>Notificación no leída</div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-secondary rounded-circle p-2 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-bell text-white" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <div>Notificación leída</div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger rounded-circle p-2 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-clipboard-check text-white" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <div>Observación de Calidad</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary rounded-circle p-2 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-hard-hat text-white" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <div>Observación SSOMA</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Botón para marcar todas las notificaciones como leídas
+        const btnMarcarTodasLeidas = document.getElementById('marcar-todas-leidas-btn');
+        if (btnMarcarTodasLeidas) {
+            btnMarcarTodasLeidas.addEventListener('click', function() {
+                fetch('{% url "reportes:marcar_todas_notificaciones_leidas" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          // Recargar la página para actualizar el estado visual
+                          window.location.reload();
+                      }
+                  })
+                  .catch(error => {
+                      console.error('Error al marcar notificaciones como leídas:', error);
+                  });
+            });
+        }
+        
+        // Función para obtener el token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

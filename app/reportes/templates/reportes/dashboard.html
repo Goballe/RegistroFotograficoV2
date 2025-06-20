@@ -99,7 +99,14 @@
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-4">Mis Proyectos</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Mis Proyectos</h2>
+        {% if user.rol == 'Admin' or user.is_superuser %}
+        <a href="{% url 'reportes:dashboard_graficos' %}" class="btn" style="background-color: #62162c; color: white;">
+            <i class="fas fa-chart-bar me-2"></i>Ver Estadísticas
+        </a>
+        {% endif %}
+    </div>
     {% if proyectos %}
         <div class="row g-4">
             {% for proyecto in proyectos %}

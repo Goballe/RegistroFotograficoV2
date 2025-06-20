@@ -125,7 +125,7 @@
 #btn-crear-nuevo:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    background: linear-gradient(135deg, #   62162c 0%, #62162c 100%);
+    background: linear-gradient(135deg, #62162c 0%, #62162c 100%);
 }
 
 #btn-crear-nuevo:disabled {
@@ -178,11 +178,7 @@
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                     <div class="formulario-card" data-formulario="{{ tipo.nombre }}">
                         <button type="button" class="formulario-btn" data-formulario="{{ tipo.nombre }}">
-                            {% if tipo_nombre == 'REPORTE FOTOGRÁFICO' or tipo_nombre == 'REPORTE FOTOGRAFICO' %}
-                                <i class="bi bi-camera-fill"></i>
-                                <span class="formulario-titulo">REPORTE FOTOGRÁFICO</span>
-                                <span class="formulario-desc">Documentación visual</span>
-                                <span class="badge">FOTOS</span>
+                            {% if False %}
                             {% elif tipo_nombre == 'REPORTE DIARIO' %}
                                 <i class="bi bi-journal-text"></i>
                                 <span class="formulario-titulo">REPORTE DIARIO</span>
@@ -431,8 +427,7 @@ inputFecha.addEventListener('input', aplicarFiltros);
         'OBSERVACIONES': `/obervaciones/proyecto/${proyectoId}/observaciones/`,
         'CONTROL DE OBS CALIDAD': `/obervaciones/proyecto/${proyectoId}/observaciones/`,
         'CONTROL DE OBS SSOMA': `/obervaciones/proyecto/${proyectoId}/observaciones/ssoma/`,
-        'REPORTE FOTOGRÁFICO': `/reportes/reportes/fotograficos/${proyectoId}/`,
-        'REPORTE FOTOGRAFICO': `/reportes/reportes/fotograficos/${proyectoId}/`,
+        // Rutas de reportes fotográficos eliminadas
         'REPORTE DIARIO': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=REPORTE%20DIARIO`,
         'CONTROL DE NC CALIDAD': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20NC%20CALIDAD`,
         'CONTROL DE NC SSOMA': `/reportes/reporte/crear/?proyecto=${proyectoId}&tipo_formulario=CONTROL%20DE%20NC%20SSOMA`,
@@ -599,12 +594,5 @@ inputFecha.addEventListener('input', aplicarFiltros);
     });
 });
 </script>
-{% if abrir_pdf_id %}
-    <script>
-        window.onload = function() {
-            window.open("{% url 'reporte_pdf' abrir_pdf_id %}", '_blank');
-            // Opcional: puedes limpiar la variable de sesión con una petición AJAX si lo deseas
-        };
-    </script>
-{% endif %}
+
 {% endblock %}

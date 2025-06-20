@@ -1,0 +1,15 @@
+{{ formset.management_form }}
+{% for form in formset %}
+    <div class="formset-form">
+        {% for field in form.visible_fields %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </p>
+        {% endfor %}
+        {% for field in form.hidden_fields %}
+            {{ field }}
+        {% endfor %}
+    </div>
+{% endfor %}

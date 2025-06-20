@@ -1,6 +1,7 @@
 from django import template
 from django.template.defaultfilters import stringfilter
 from django.utils.translation import gettext_lazy as _
+import math
 
 register = template.Library()
 
@@ -24,3 +25,29 @@ def multiply(value, arg):
             return value * int(arg)
         except (ValueError, TypeError):
             return ''
+
+@register.filter
+def intdiv(value, arg):
+    """Divide el valor por el argumento y devuelve un entero."""
+    try:
+        return math.ceil(int(value) / int(arg))
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter
+def get_range(value, start=0):
+    """Crea un rango de números desde start hasta value."""
+    try:
+        start = int(start)
+        value = int(value)
+        return range(start, value + 1)
+    except (ValueError, TypeError):
+        return range(0)
+
+@register.filter
+def add(value, arg):
+    """Suma el valor y el argumento."""
+    try:
+        return int(value) + int(arg)
+    except (ValueError, TypeError):
+        return value

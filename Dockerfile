@@ -4,6 +4,11 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Configurar límites de tamaño para permitir archivos grandes (100MB)
+ENV DATA_UPLOAD_MAX_MEMORY_SIZE=104857600
+ENV FILE_UPLOAD_MAX_MEMORY_SIZE=104857600
+ENV MAX_UPLOAD_SIZE=104857600
+
 WORKDIR /code
 
 # Instalar dependencias del sistema

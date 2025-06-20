@@ -1,0 +1,19 @@
+{{ formset.management_form }}
+<ul>
+    {% for form in formset %}
+        <li>
+            <ul>
+                {% for field in form.visible_fields %}
+                    <li>
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {{ field.errors }}
+                    </li>
+                {% endfor %}
+                {% for field in form.hidden_fields %}
+                    {{ field }}
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>

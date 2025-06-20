@@ -1,8 +1,6 @@
 from django.db import models
-from django.urls import reverse
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils.translation import gettext_lazy as _
-import os
 
 class Usuario(AbstractUser):
     class Rol(models.TextChoices):
@@ -61,8 +59,6 @@ class Usuario(AbstractUser):
 
 class TipoFormularioProyecto(models.Model):
     TIPO_CHOICES = [
-        ('REPORTE FOTOGRÁFICO', 'REPORTE FOTOGRÁFICO'),
-        ('REPORTE DIARIO', 'REPORTE DIARIO'),
         ('CONTROL DE OBS CALIDAD', 'CONTROL DE OBS CALIDAD'),
         ('CONTROL DE OBS SSOMA', 'OBSERVACIONES SSOMA'),
         ('CONTROL DE NC CALIDAD', 'CONTROL DE NC CALIDAD'),
@@ -96,60 +92,3 @@ class Proyecto(models.Model):
 
     def __str__(self):
         return self.nombre
-
-class ReporteFotografico(models.Model):
-    class TipoFormulario(models.TextChoices):
-        FOTOGRAFICO = 'REPORTE FOTOGRÁFICO', 'REPORTE FOTOGRÁFICO'
-        DIARIO = 'REPORTE DIARIO', 'REPORTE DIARIO'
-        OBS_CALIDAD = 'CONTROL DE OBS CALIDAD', 'CONTROL DE OBS CALIDAD'
-        NC_CALIDAD = 'CONTROL DE NC CALIDAD', 'CONTROL DE NC CALIDAD'
-        NC_SSOMA = 'CONTROL DE NC SSOMA', 'CONTROL DE NC SSOMA'
-        RFI = 'CONTROL DE RFI', 'CONTROL DE RFI'
-        ODC = 'CONTROL DE ODC', 'CONTROL DE ODC'
-        VALORIZACIONES = 'CONTROL DE VALORIZACIONES', 'CONTROL DE VALORIZACIONES'
-        DOSSIER = 'CONTROL DE DOSSIER', 'CONTROL DE DOSSIER'
-        CARTAS = 'CONTROL DE CARTAS', 'CONTROL DE CARTAS'
-
-    tipo_formulario = models.CharField(
-        max_length=32,
-        choices=TipoFormulario.choices,
-        default='REPORTE FOTOGRÁFICO',
-        verbose_name='Tipo de Formulario'
-    )
-    proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name='reportes')
-    cliente = models.CharField("Cliente", max_length=200)
-    contratista = models.CharField("Contratista", max_length=200)
-    codigo_proyecto = models.CharField("Código del proyecto", max_length=50)
-    version_reporte = models.CharField("Versión del reporte", max_length=10)
-    fecha_emision = models.DateField("Fecha de emisión")
-    elaborado_por = models.CharField("Elaborado por", max_length=100)
-    revisado_por = models.CharField("Revisado por", max_length=100)
-    inicio_supervision = models.DateField("Inicio de la Supervisión")
-    mes_actual_obra = models.PositiveIntegerField("Mes Actual de Obra")
-    reporte_numero = models.PositiveIntegerField("Reporte N°")
-    descripcion = models.TextField("Descripción", blank=True, null=True)
-    creado_en = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f'{self.proyecto} - {self.fecha_emision}'
-
-    def get_absolute_url(self):
-        return reverse('reporte_pdf', args=[str(self.id)])
-
-class FotoReporte(models.Model):
-    reporte = models.ForeignKey(ReporteFotografico, related_name='fotos', on_delete=models.CASCADE)
-    imagen = models.ImageField("Fotografía", upload_to='fotos/')
-    orden = models.PositiveIntegerField("Orden", default=0)
-    descripcion = models.CharField("Descripción", max_length=200, blank=True, null=True)
-    
-    class Meta:
-        ordering = ['orden']
-    
-    def __str__(self):
-        return f"Foto {self.orden} - {self.reporte.proyecto}"
-        
-    def delete(self, *args, **kwargs):
-        # Eliminar el archivo de imagen cuando se elimina el objeto
-        if os.path.isfile(self.imagen.path):
-            os.remove(self.imagen.path)
-        super().delete(*args, **kwargs)

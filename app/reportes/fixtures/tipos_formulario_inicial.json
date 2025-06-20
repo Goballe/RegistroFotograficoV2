@@ -1,6 +1,5 @@
 [
   {"model": "reportes.tipoformularioproyecto", "pk": 1, "fields": {"nombre": "REPORTE DIARIO"}},
-  {"model": "reportes.tipoformularioproyecto", "pk": 2, "fields": {"nombre": "REPORTE FOTOGRÁFICO"}},
   {"model": "reportes.tipoformularioproyecto", "pk": 3, "fields": {"nombre": "CONTROL DE OBS CALIDAD"}},
   {"model": "reportes.tipoformularioproyecto", "pk": 4, "fields": {"nombre": "CONTROL DE OBS SSOMA"}},
   {"model": "reportes.tipoformularioproyecto", "pk": 5, "fields": {"nombre": "CONTROL DE NC CALIDAD"}},

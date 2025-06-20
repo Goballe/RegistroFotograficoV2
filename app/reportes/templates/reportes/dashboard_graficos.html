@@ -1,0 +1,579 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Estadísticas{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 20px;
+    border-color: rgba(98, 22, 44, 0.2);
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  .card-header {
+    background-color: #62162c;
+    color: white;
+    font-weight: 500;
+  }
+  .nav-tabs .nav-link {
+    color: #62162c;
+    border: none;
+    padding: 10px 15px;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    font-weight: 500;
+  }
+  .nav-tabs .nav-link.active {
+    color: white;
+    background-color: #62162c;
+    border: none;
+  }
+  .tab-content {
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+  }
+  .chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">Dashboard de Estadísticas</h2>
+        <div>
+          <form id="yearSelectorForm" class="d-inline-block me-2">
+            <div class="input-group">
+              <label class="input-group-text" for="yearSelector" style="background-color: #62162c; color: white;">
+                <i class="fas fa-calendar-alt"></i>
+              </label>
+              <select class="form-select" id="yearSelector" name="anio" style="border-color: #62162c;">
+                {% for anio in anios_disponibles %}
+                  <option value="{{ anio }}" {% if anio == anio_seleccionado %}selected{% endif %}>{{ anio }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+          <a href="{% url 'reportes:dashboard' %}" class="btn" style="border-color: #62162c; color: #62162c;">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+          </a>
+        </div>
+      </div>
+      <hr>
+    </div>
+  </div>
+
+  <!-- Pestañas de navegación -->
+  <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen" type="button" role="tab" aria-controls="resumen" aria-selected="true">
+        <i class="fas fa-chart-pie me-2"></i>Resumen
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="calidad-tab" data-bs-toggle="tab" data-bs-target="#calidad" type="button" role="tab" aria-controls="calidad" aria-selected="false">
+        <i class="fas fa-clipboard-check me-2"></i>Calidad
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="ssoma-tab" data-bs-toggle="tab" data-bs-target="#ssoma" type="button" role="tab" aria-controls="ssoma" aria-selected="false">
+        <i class="fas fa-hard-hat me-2"></i>SSOMA
+      </button>
+    </li>
+  </ul>
+
+  <!-- Contenido de las pestañas -->
+  <div class="tab-content" id="myTabContent">
+    <!-- Pestaña de Resumen -->
+    <div class="tab-pane fade show active" id="resumen" role="tabpanel" aria-labelledby="resumen-tab">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones por Estado</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartEstadosResumen"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones por Nivel de Riesgo</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartRiesgosResumen"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones Mensuales - {{ anio_seleccionado }}</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 400px;">
+                <canvas id="chartMensualResumen"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pestaña de Calidad -->
+    <div class="tab-pane fade" id="calidad" role="tabpanel" aria-labelledby="calidad-tab">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones de Calidad por Estado</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartEstadosCalidad"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones de Calidad por Nivel de Riesgo</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartRiesgosCalidad"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones de Calidad por Estado y Nivel de Riesgo</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 400px;">
+                <canvas id="chartEstadoRiesgoCalidad"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pestaña de SSOMA -->
+    <div class="tab-pane fade" id="ssoma" role="tabpanel" aria-labelledby="ssoma-tab">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones SSOMA por Estado</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartEstadosSsoma"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones SSOMA por Nivel de Riesgo</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="chartRiesgosSsoma"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card shadow">
+            <div class="card-header">
+              <h5 class="mb-0">Observaciones SSOMA por Estado y Nivel de Riesgo</h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 400px;">
+                <canvas id="chartEstadoRiesgoSsoma"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Colores para los gráficos
+  const coloresEstados = {
+    'Pendiente': '#dc3545',
+    'En Proceso': '#ffc107',
+    'Atendido': '#0dcaf0',
+    'Cerrado': '#198754'
+  };
+  
+  const coloresRiesgos = {
+    'Alto': '#dc3545',
+    'Medio': '#ffc107',
+    'Bajo': '#0dcaf0'
+  };
+  
+  // Función para obtener color según el estado
+  function getColorEstado(estado) {
+    return coloresEstados[estado] || '#6c757d';
+  }
+  
+  // Función para obtener color según el nivel de riesgo
+  function getColorRiesgo(riesgo) {
+    return coloresRiesgos[riesgo] || '#6c757d';
+  }
+
+  // Datos iniciales de los gráficos
+  const datosGraficos = JSON.parse('{{ datos_graficos|escapejs }}');
+
+  // Función para crear gráfico de barras
+  function crearGraficoBarras(idCanvas, etiquetas, datos, colores, titulo) {
+    const ctx = document.getElementById(idCanvas).getContext('2d');
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: [{
+          label: titulo,
+          data: datos,
+          backgroundColor: colores,
+          borderColor: colores.map(color => color.replace('0.7', '1')),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          title: {
+            display: false,
+            text: titulo
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Función para crear gráfico de barras agrupadas
+  function crearGraficoBarrasAgrupadas(idCanvas, etiquetas, datasets, titulo) {
+    const ctx = document.getElementById(idCanvas).getContext('2d');
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: false,
+            text: titulo
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Función para crear gráfico de líneas
+  function crearGraficoLineas(idCanvas, etiquetas, datasets, titulo) {
+    const ctx = document.getElementById(idCanvas).getContext('2d');
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: etiquetas,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: false,
+            text: titulo
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Manejar cambio de año
+  document.getElementById('yearSelector').addEventListener('change', function() {
+    document.getElementById('yearSelectorForm').submit();
+  });
+  
+  // Inicializar gráficos cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', function() {
+    // Preparar datos para gráficos de Calidad
+    const datosCalidad = datosGraficos.calidad;
+    
+    // Gráfico de estados de Calidad
+    const etiquetasEstadosCalidad = datosCalidad.estados.map(item => item.estado);
+    const valoresEstadosCalidad = datosCalidad.estados.map(item => item.total);
+    const coloresEstadosCalidad = etiquetasEstadosCalidad.map(estado => getColorEstado(estado));
+    
+    crearGraficoBarras(
+      'chartEstadosCalidad',
+      etiquetasEstadosCalidad,
+      valoresEstadosCalidad,
+      coloresEstadosCalidad,
+      'Observaciones por Estado'
+    );
+    
+    // Gráfico de niveles de riesgo de Calidad
+    const etiquetasRiesgosCalidad = datosCalidad.niveles_riesgo.map(item => item.nivel_riesgo);
+    const valoresRiesgosCalidad = datosCalidad.niveles_riesgo.map(item => item.total);
+    const coloresRiesgosCalidad = etiquetasRiesgosCalidad.map(riesgo => getColorRiesgo(riesgo));
+    
+    crearGraficoBarras(
+      'chartRiesgosCalidad',
+      etiquetasRiesgosCalidad,
+      valoresRiesgosCalidad,
+      coloresRiesgosCalidad,
+      'Observaciones por Nivel de Riesgo'
+    );
+    
+    // Gráfico combinado de estado y riesgo de Calidad
+    const etiquetasEstadoRiesgoCalidad = datosCalidad.estado_riesgo.map(item => item.estado);
+    const datasetsEstadoRiesgoCalidad = [];
+    
+    // Crear un dataset por cada nivel de riesgo
+    const nivelesRiesgo = ['Alto', 'Medio', 'Bajo'];
+    nivelesRiesgo.forEach((riesgo, index) => {
+      const datos = datosCalidad.estado_riesgo.map(estado => {
+        const datoRiesgo = estado.datos.find(d => d.riesgo === riesgo);
+        return datoRiesgo ? datoRiesgo.total : 0;
+      });
+      
+      datasetsEstadoRiesgoCalidad.push({
+        label: riesgo,
+        data: datos,
+        backgroundColor: getColorRiesgo(riesgo),
+        borderColor: getColorRiesgo(riesgo).replace('0.7', '1'),
+        borderWidth: 1
+      });
+    });
+    
+    crearGraficoBarrasAgrupadas(
+      'chartEstadoRiesgoCalidad',
+      etiquetasEstadoRiesgoCalidad,
+      datasetsEstadoRiesgoCalidad,
+      'Observaciones por Estado y Nivel de Riesgo'
+    );
+    
+    // Preparar datos para gráficos de SSOMA
+    const datosSsoma = datosGraficos.ssoma;
+    
+    // Gráfico de estados de SSOMA
+    const etiquetasEstadosSsoma = datosSsoma.estados.map(item => item.estado);
+    const valoresEstadosSsoma = datosSsoma.estados.map(item => item.total);
+    const coloresEstadosSsoma = etiquetasEstadosSsoma.map(estado => getColorEstado(estado));
+    
+    crearGraficoBarras(
+      'chartEstadosSsoma',
+      etiquetasEstadosSsoma,
+      valoresEstadosSsoma,
+      coloresEstadosSsoma,
+      'Observaciones por Estado'
+    );
+    
+    // Gráfico de niveles de riesgo de SSOMA
+    const etiquetasRiesgosSsoma = datosSsoma.niveles_riesgo.map(item => item.nivel_riesgo);
+    const valoresRiesgosSsoma = datosSsoma.niveles_riesgo.map(item => item.total);
+    const coloresRiesgosSsoma = etiquetasRiesgosSsoma.map(riesgo => getColorRiesgo(riesgo));
+    
+    crearGraficoBarras(
+      'chartRiesgosSsoma',
+      etiquetasRiesgosSsoma,
+      valoresRiesgosSsoma,
+      coloresRiesgosSsoma,
+      'Observaciones por Nivel de Riesgo'
+    );
+    
+    // Gráfico combinado de estado y riesgo de SSOMA
+    const etiquetasEstadoRiesgoSsoma = datosSsoma.estado_riesgo.map(item => item.estado);
+    const datasetsEstadoRiesgoSsoma = [];
+    
+    // Crear un dataset por cada nivel de riesgo
+    nivelesRiesgo.forEach((riesgo, index) => {
+      const datos = datosSsoma.estado_riesgo.map(estado => {
+        const datoRiesgo = estado.datos.find(d => d.riesgo === riesgo);
+        return datoRiesgo ? datoRiesgo.total : 0;
+      });
+      
+      datasetsEstadoRiesgoSsoma.push({
+        label: riesgo,
+        data: datos,
+        backgroundColor: getColorRiesgo(riesgo),
+        borderColor: getColorRiesgo(riesgo).replace('0.7', '1'),
+        borderWidth: 1
+      });
+    });
+    
+    crearGraficoBarrasAgrupadas(
+      'chartEstadoRiesgoSsoma',
+      etiquetasEstadoRiesgoSsoma,
+      datasetsEstadoRiesgoSsoma,
+      'Observaciones por Estado y Nivel de Riesgo'
+    );
+    
+    // Gráficos de resumen (combinando datos de Calidad y SSOMA)
+    
+    // Gráfico de estados resumen
+    const etiquetasEstadosResumen = ['Pendiente', 'En Proceso', 'Atendido', 'Cerrado'];
+    const datasetsEstadosResumen = [
+      {
+        label: 'Calidad',
+        data: etiquetasEstadosResumen.map(estado => {
+          const item = datosCalidad.estados.find(e => e.estado === estado);
+          return item ? item.total : 0;
+        }),
+        backgroundColor: 'rgba(98, 22, 44, 0.7)',
+        borderColor: 'rgba(98, 22, 44, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'SSOMA',
+        data: etiquetasEstadosResumen.map(estado => {
+          const item = datosSsoma.estados.find(e => e.estado === estado);
+          return item ? item.total : 0;
+        }),
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }
+    ];
+    
+    crearGraficoBarrasAgrupadas(
+      'chartEstadosResumen',
+      etiquetasEstadosResumen,
+      datasetsEstadosResumen,
+      'Observaciones por Estado'
+    );
+    
+    // Gráfico de riesgos resumen
+    const etiquetasRiesgosResumen = ['Alto', 'Medio', 'Bajo'];
+    const datasetsRiesgosResumen = [
+      {
+        label: 'Calidad',
+        data: etiquetasRiesgosResumen.map(riesgo => {
+          const item = datosCalidad.niveles_riesgo.find(r => r.nivel_riesgo === riesgo);
+          return item ? item.total : 0;
+        }),
+        backgroundColor: 'rgba(98, 22, 44, 0.7)',
+        borderColor: 'rgba(98, 22, 44, 1)',
+        borderWidth: 1
+      },
+      {
+        label: 'SSOMA',
+        data: etiquetasRiesgosResumen.map(riesgo => {
+          const item = datosSsoma.niveles_riesgo.find(r => r.nivel_riesgo === riesgo);
+          return item ? item.total : 0;
+        }),
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }
+    ];
+    
+    crearGraficoBarrasAgrupadas(
+      'chartRiesgosResumen',
+      etiquetasRiesgosResumen,
+      datasetsRiesgosResumen,
+      'Observaciones por Nivel de Riesgo'
+    );
+    
+    // Gráfico de observaciones mensuales
+    const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const datasetsMensualesResumen = [
+      {
+        label: 'Calidad',
+        data: datosCalidad.datos_mensuales.map(item => item.total),
+        backgroundColor: 'rgba(98, 22, 44, 0.2)',
+        borderColor: 'rgba(98, 22, 44, 1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      },
+      {
+        label: 'SSOMA',
+        data: datosSsoma.datos_mensuales.map(item => item.total),
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true
+      }
+    ];
+    
+    crearGraficoLineas(
+      'chartMensualResumen',
+      nombresMeses,
+      datasetsMensualesResumen,
+      'Observaciones Mensuales'
+    );
+  });
+</script>
+{% endblock %}

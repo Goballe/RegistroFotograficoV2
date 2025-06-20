@@ -1,0 +1,12 @@
+{% if errors %}
+<div class="errorlist">
+    {% for field, errors in errors.items %}
+        {% if field %}<div class="error-field">{{ field }}:</div>{% endif %}
+        <div class="error-messages">
+            {% for error in errors %}
+                <div class="error-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -1,9 +1,9 @@
 from django import forms
-from django.forms import inlineformset_factory, CheckboxSelectMultiple
+from django.forms import CheckboxSelectMultiple
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm, UserChangeForm
 from django.contrib.auth.models import User, Group
 from django.utils.translation import gettext_lazy as _
-from .models import ReporteFotografico, FotoReporte, Usuario, Proyecto, TipoFormularioProyecto
+from .models import Usuario, Proyecto, TipoFormularioProyecto
 
 class RegistroUsuarioForm(forms.ModelForm):
     nombre_completo = forms.CharField(
@@ -54,79 +54,7 @@ class RegistroUsuarioForm(forms.ModelForm):
         return user
 
 
-class FotoForm(forms.ModelForm):
-    class Meta:
-        model = FotoReporte
-        fields = ['imagen', 'descripcion']
-        widgets = {
-            'imagen': forms.FileInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descripción de la foto'})
-        }
-
-class ReporteForm(forms.ModelForm):
-    proyecto = forms.ModelChoiceField(
-        queryset=ReporteFotografico._meta.get_field('proyecto').remote_field.model.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Proyecto',
-    )
-    tipo_formulario = forms.ChoiceField(
-        choices=ReporteFotografico._meta.get_field('tipo_formulario').choices,
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Tipo de formulario',
-        required=True,
-    )
-    def __init__(self, *args, **kwargs):
-        initial = kwargs.get('initial', {})
-        super().__init__(*args, **kwargs)
-        self.fields['proyecto'].label_from_instance = lambda obj: obj.nombre
-        # Si initial tiene valores para los campos de proyecto, asígnalos si el campo está vacío
-        for field in ['cliente', 'contratista', 'codigo_proyecto', 'inicio_supervision']:
-            if field in initial and not self.fields[field].initial:
-                self.fields[field].initial = initial[field]
-    # Asegurar que version_reporte solo acepte números
-    version_reporte = forms.CharField(
-        label='Versión del reporte',
-        max_length=10,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'pattern': '\\d*',
-            'title': 'Solo se permiten números',
-            'inputmode': 'numeric'
-        }),
-        required=True
-    )
-    
-    # Asegurar que reporte_numero solo acepte números
-    reporte_numero = forms.IntegerField(
-        label='N° de Reporte',
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'min': '1',
-            'step': '1',
-            'title': 'Solo se permiten números enteros positivos'
-        }),
-        required=True
-    )
-    
-    class Meta:
-        model = ReporteFotografico
-        fields = [
-            'proyecto', 'tipo_formulario', 'cliente', 'contratista', 'codigo_proyecto', 'version_reporte',
-            'fecha_emision', 'elaborado_por', 'revisado_por', 'inicio_supervision',
-            'mes_actual_obra', 'reporte_numero', 'descripcion'
-        ]
-        widgets = {
-            'fecha_emision': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'inicio_supervision': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'cliente': forms.TextInput(attrs={'class': 'form-control'}),
-            'contratista': forms.TextInput(attrs={'class': 'form-control'}),
-            'codigo_proyecto': forms.TextInput(attrs={'class': 'form-control'}),
-            'elaborado_por': forms.TextInput(attrs={'class': 'form-control'}),
-            'revisado_por': forms.TextInput(attrs={'class': 'form-control'}),
-            'mes_actual_obra': forms.NumberInput(attrs={'class': 'form-control'}),
-            'reporte_numero': forms.NumberInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
+# Se eliminó la clase FotoForm relacionada con reportes fotográficos
 
 class PerfilUsuarioForm(forms.ModelForm):
     class Meta:
@@ -204,14 +132,4 @@ class ProyectoForm(forms.ModelForm):
         # Ordenar los tipos de formulario por nombre
         self.fields['tipos_formulario'].queryset = TipoFormularioProyecto.objects.all().order_by('nombre')
 
-# Formset para las fotos
-FotoFormSet = inlineformset_factory(
-    ReporteFotografico, 
-    FotoReporte, 
-    form=FotoForm, 
-    extra=3,  # Mostrar 3 formularios vacíos por defecto
-    can_delete=True,
-    max_num=50,  # Permite hasta 50 fotos
-    validate_max=True,
-    fields=('imagen', 'descripcion')
-)
+# Se eliminó el formset FotoFormSet relacionado con reportes fotográficos

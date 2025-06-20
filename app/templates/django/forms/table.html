@@ -1,0 +1,29 @@
+{% if errors %}
+    <tr>
+        <td colspan="2">
+            <ul class="errorlist">
+                {% for error in errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
+{% endif %}
+{% for field in fields %}
+    <tr>
+        <th>{{ field.label_tag }}</th>
+        <td>
+            {{ field }}
+            {% if field.help_text %}
+                <br><span class="helptext">{{ field.help_text }}</span>
+            {% endif %}
+            {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}

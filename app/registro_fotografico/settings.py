@@ -84,6 +84,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Middleware personalizado para controlar el tamaño de archivos
+    'reportes.middleware.FileSizeMiddleware',
 ]
 
 ROOT_URLCONF = 'registro_fotografico.urls'
@@ -115,16 +117,7 @@ WSGI_APPLICATION = 'registro_fotografico.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'registro_fotografico',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',
-        'PORT': '5432',
-    }
-}
+# La configuración de la base de datos se define al final del archivo
 
 
 # Password validation
@@ -158,6 +151,28 @@ STATICFILES_DIRS = [
 # Archivos de medios subidos por el usuario
 MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / 'media')
+
+# Configuración para aumentar el límite de tamaño de archivos a 50MB
+# Estos valores son críticos para permitir la subida de archivos grandes
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (aumentado para mayor seguridad)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (aumentado para mayor seguridad)
+MAX_UPLOAD_SIZE = 104857600  # 100MB en bytes (aumentado para mayor seguridad)
+
+# Deshabilitar cualquier validación de tamaño de archivos en Django
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
+
+# Configurar manejadores de carga personalizados para permitir archivos grandes
+FILE_UPLOAD_HANDLERS = [
+    'reportes.custom_upload_handler.CustomMemoryFileUploadHandler',
+    'reportes.custom_upload_handler.CustomTemporaryFileUploadHandler',
+]
+
+# Configuración para formularios
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
+
+# Asegurar que los formularios no tengan campos de solo lectura por defecto
+FORM_FIELDS_READONLY = False
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -211,13 +226,26 @@ SITE_URL = 'http://localhost:8000'  # Cambiar en producción
 # Configuración de base de datos
 import os
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'registro_fotografico'),
-        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),  # Nombre del servicio en docker-compose
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+# Detectar si estamos en Docker
+import os
+IN_DOCKER = os.environ.get('POSTGRES_HOST') == 'db'
+
+# Usar PostgreSQL si estamos en Docker, de lo contrario SQLite
+if IN_DOCKER:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB', 'registro_fotografico'),
+            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('POSTGRES_HOST', 'db'),  # Nombre del servicio en docker-compose
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }

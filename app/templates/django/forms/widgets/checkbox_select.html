@@ -1,0 +1,5 @@
+{% for group, options, index in widget.optgroups %}{% if group %}
+  <div>{{ group }}</div>{% endif %}
+  {% for option in options %}
+    <div>{% include option.template_name with widget=option %}</div>
+  {% endfor %}{% endfor %}

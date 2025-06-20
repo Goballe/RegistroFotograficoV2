@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Proyecto, ReporteFotografico, TipoFormularioProyecto, Usuario
+from .models import Proyecto, TipoFormularioProyecto, Usuario
 
 class ProyectoAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'descripcion', 'cliente', 'contratista', 'codigo_proyecto', 'inicio_supervision')
@@ -31,4 +31,3 @@ class TipoFormularioProyectoAdmin(admin.ModelAdmin):
 admin.site.register(Proyecto, ProyectoAdmin)
 admin.site.register(Usuario, UsuarioAdmin)
 admin.site.register(TipoFormularioProyecto, TipoFormularioProyectoAdmin)
-# admin.site.unregister(ReporteFotografico)  # No registrar ReporteFotografico para ocultarlo

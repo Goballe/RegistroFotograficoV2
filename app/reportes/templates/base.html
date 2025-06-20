@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Registro Fotográfico{% endblock %}</title>
+    <title>{% block title %}Sistema de Gestión{% endblock %}</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -128,6 +128,31 @@
       </ul>
       <ul class="navbar-nav align-items-center">
         {% if user.is_authenticated %}
+          <!-- Campanita de notificaciones -->
+          <li class="nav-item dropdown me-2">
+            <a class="nav-link position-relative" href="#" id="notificacionesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="position-relative d-inline-block">
+                <i class="fas fa-bell" style="font-size: 1.2rem; color: #62162c;"></i>
+                <span id="contador-notificaciones" class="position-absolute top-0 end-0 translate-middle-y badge rounded-pill bg-danger" style="font-size: 0.7rem; margin-left: 2px; display: none;">
+                  0
+                </span>
+              </div>
+            </a>
+            <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificacionesDropdown" style="width: 350px; max-height: 450px; overflow-y: auto; padding: 0; border-radius: 12px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);">
+              <div class="px-3 py-3 d-flex justify-content-between align-items-center bg-light border-bottom" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                <h6 class="mb-0 fw-bold" style="color: #62162c;">Notificaciones</h6>
+                <button id="marcar-todas-leidas" class="btn btn-sm text-primary" style="font-size: 0.8rem; font-weight: 500;">Marcar todas como leídas</button>
+              </div>
+              <div id="lista-notificaciones" class="py-0">
+                <div class="text-center py-4 text-muted">
+                  <i class="fas fa-spinner fa-spin mb-2"></i>
+                  <p class="mb-0">Cargando notificaciones...</p>
+                </div>
+              </div>
+              <div class="dropdown-divider my-0"></div>
+              <a href="{% url 'reportes:todas_notificaciones' %}" class="dropdown-item text-center py-3" style="font-size: 0.9rem; background-color: #f8f9fa; color: #62162c; font-weight: 600; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">Ver todas las notificaciones <i class="fas fa-arrow-right ms-1"></i></a>
+            </div>
+          </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <div class="d-flex align-items-center">
@@ -145,7 +170,7 @@
               </li>
               <li><hr class="dropdown-divider my-2"></li>
               <li>
-                <a class="dropdown-item" href="{% url 'reportes:perfil_usuario' %}">
+                <a class="dropdown-item" href="{% url 'reportes:perfil' %}">
                   <i class="fas fa-user me-2" style="width: 1.25rem; text-align: center;"></i>Mi Perfil
                 </a>
               </li>
@@ -219,5 +244,152 @@
     
     <!-- Scripts personalizados -->
     {% block extra_js %}{% endblock %}
+    
+    <!-- Script para notificaciones -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Solo ejecutar si el usuario está autenticado
+        {% if user.is_authenticated %}
+        
+        const contadorNotificaciones = document.getElementById('contador-notificaciones');
+        const listaNotificaciones = document.getElementById('lista-notificaciones');
+        const btnMarcarTodasLeidas = document.getElementById('marcar-todas-leidas');
+        
+        // Función para cargar notificaciones
+        function cargarNotificaciones() {
+          fetch('{% url "reportes:obtener_notificaciones" %}')
+            .then(response => response.json())
+            .then(data => {
+              // Actualizar contador
+              if (data.total > 0) {
+                contadorNotificaciones.textContent = data.total > 99 ? '99+' : data.total;
+                contadorNotificaciones.style.display = 'block';
+              } else {
+                contadorNotificaciones.style.display = 'none';
+              }
+              
+              // Actualizar lista de notificaciones
+              let contenidoHTML = '';
+              
+              // Mostrar observaciones pendientes si hay
+              if (data.total_observaciones > 0) {
+                contenidoHTML += `
+                  <div class="dropdown-item d-flex align-items-center py-3 border-bottom">
+                    <div class="flex-shrink-0">
+                      <div class="bg-warning rounded-circle p-2" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">
+                        <i class="fas fa-exclamation-triangle text-white" style="font-size: 1.3rem;"></i>
+                      </div>
+                    </div>
+                    <div class="ms-3">
+                      <p class="mb-1 fw-bold" style="color: #62162c;">Observaciones pendientes</p>
+                      <p class="text-muted mb-0" style="font-size: 0.85rem;">Tienes ${data.total_observaciones} observaciones pendientes por revisar</p>
+                    </div>
+                  </div>
+                `;
+              }
+              
+              // Mostrar notificaciones
+              if (data.notificaciones.length > 0) {
+                data.notificaciones.forEach(notif => {
+                  contenidoHTML += `
+                    <a href="${notif.url}" class="dropdown-item d-flex align-items-center py-3 border-bottom notificacion-item" data-id="${notif.id}" style="transition: background-color 0.2s ease;">
+                      <div class="flex-shrink-0">
+                        <div class="bg-primary rounded-circle p-2" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">
+                          <i class="fas fa-bell text-white" style="font-size: 1.3rem;"></i>
+                        </div>
+                      </div>
+                      <div class="ms-3">
+                        <p class="mb-1 fw-bold" style="color: #333;">${notif.mensaje}</p>
+                        <p class="text-muted mb-0" style="font-size: 0.85rem;">${notif.creada_en}</p>
+                      </div>
+                    </a>
+                  `;
+                });
+              } else if (data.total_observaciones === 0) {
+                // Si no hay notificaciones ni observaciones
+                contenidoHTML = `
+                  <div class="text-center py-5 text-muted">
+                    <i class="fas fa-check-circle mb-3" style="font-size: 2.5rem; color: #62162c;"></i>
+                    <p class="mb-0">No tienes notificaciones nuevas</p>
+                  </div>
+                `;
+              }
+              
+              listaNotificaciones.innerHTML = contenidoHTML;
+              
+              // Agregar evento para marcar como leída al hacer clic
+              document.querySelectorAll('.notificacion-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                  const notifId = this.dataset.id;
+                  marcarComoLeida(notifId);
+                });
+              });
+            })
+            .catch(error => {
+              console.error('Error al cargar notificaciones:', error);
+              listaNotificaciones.innerHTML = `
+                <div class="text-center py-4 text-danger">
+                  <i class="fas fa-exclamation-circle mb-2"></i>
+                  <p class="mb-0">Error al cargar notificaciones</p>
+                </div>
+              `;
+            });
+        }
+        
+        // Función para marcar una notificación como leída
+        function marcarComoLeida(notifId) {
+          fetch(`{% url "reportes:marcar_notificacion_leida" notificacion_id=0 %}`.replace('0', notifId), {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCookie('csrftoken'),
+              'Content-Type': 'application/json'
+            },
+          }).then(() => {
+            cargarNotificaciones(); // Recargar notificaciones
+          }).catch(error => {
+            console.error('Error al marcar notificación como leída:', error);
+          });
+        }
+        
+        // Función para marcar todas las notificaciones como leídas
+        btnMarcarTodasLeidas.addEventListener('click', function() {
+          fetch('{% url "reportes:marcar_todas_notificaciones_leidas" %}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCookie('csrftoken'),
+              'Content-Type': 'application/json'
+            },
+          }).then(() => {
+            cargarNotificaciones(); // Recargar notificaciones
+          }).catch(error => {
+            console.error('Error al marcar todas las notificaciones como leídas:', error);
+          });
+        });
+        
+        // Función para obtener el token CSRF
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+        
+        // Cargar notificaciones al cargar la página
+        cargarNotificaciones();
+        
+        // Actualizar notificaciones cada 60 segundos
+        setInterval(cargarNotificaciones, 60000);
+        
+        {% endif %}
+      });
+    </script>
 </body>
 </html>
